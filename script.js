@@ -41,6 +41,7 @@
     el.mcReplayBtn = document.getElementById('mc-replay-btn');
 
     el.unscramblePanel = document.getElementById('unscramble-panel');
+    el.unscrambleReplayBtn = document.getElementById('unscramble-replay-btn');
     el.unscrambleBuild = document.getElementById('unscramble-build');
     el.unscrambleBank = document.getElementById('unscramble-bank');
     el.unscrambleReset = document.getElementById('unscramble-reset');
@@ -82,6 +83,9 @@
       Speech.speak(state.order[state.index]);
     });
     el.mcReplayBtn.addEventListener('click', function () {
+      Speech.speak(state.order[state.index]);
+    });
+    el.unscrambleReplayBtn.addEventListener('click', function () {
       Speech.speak(state.order[state.index]);
     });
     el.unscrambleReset.addEventListener('click', function () {
@@ -220,6 +224,7 @@
     state.unscrambleBuild = [];
     state.unscrambleBank = scrambleLetters(word);
     renderUnscrambleTiles();
+    if (Speech.isSupported()) Speech.speak(word);
   }
 
   function renderUnscrambleTiles() {

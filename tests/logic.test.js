@@ -1,7 +1,7 @@
 // tests/logic.test.js
 const test = require('node:test');
 const assert = require('node:assert');
-const { shuffleWords, checkAnswer, generateDistractors } = require('../assets/logic.js');
+const { shuffleWords, checkAnswer, generateDistractors, scrambleLetters } = require('../assets/logic.js');
 
 test('shuffleWords returns a new array with the same elements', () => {
   const words = ['cat', 'dog', 'bird'];
@@ -63,4 +63,24 @@ test('generateDistractors degrades gracefully for a very short word without cras
   assert.doesNotThrow(() => generateDistractors('a', 3, Math.random));
   const distractors = generateDistractors('a', 3, Math.random);
   assert.ok(Array.isArray(distractors));
+});
+
+test('scrambleLetters returns the same letters as the original word', () => {
+  const result = scrambleLetters('friend', Math.random);
+  assert.deepStrictEqual(result.slice().sort(), 'friend'.split('').sort());
+});
+
+test('scrambleLetters returns a different order than the original for a typical word', () => {
+  const result = scrambleLetters('beautiful', () => 0.1);
+  assert.notDeepStrictEqual(result, 'beautiful'.split(''));
+});
+
+test('scrambleLetters handles a 1-letter word without crashing', () => {
+  const result = scrambleLetters('a', Math.random);
+  assert.deepStrictEqual(result, ['a']);
+});
+
+test('scrambleLetters does not infinite-loop on all-identical letters', () => {
+  const result = scrambleLetters('aaa', Math.random);
+  assert.deepStrictEqual(result.slice().sort(), ['a', 'a', 'a']);
 });

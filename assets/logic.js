@@ -78,10 +78,31 @@ function generateDistractors(word, count, randomFn) {
   return results;
 }
 
+function scrambleLetters(word, randomFn) {
+  randomFn = randomFn || Math.random;
+  var original = word.split('');
+  if (original.length < 2) return original;
+
+  var scrambled = original.slice();
+  var attempts = 0;
+  do {
+    for (var i = scrambled.length - 1; i > 0; i--) {
+      var j = Math.floor(randomFn() * (i + 1));
+      var tmp = scrambled[i];
+      scrambled[i] = scrambled[j];
+      scrambled[j] = tmp;
+    }
+    attempts++;
+  } while (scrambled.join('') === original.join('') && attempts < 20);
+
+  return scrambled;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     shuffleWords: shuffleWords,
     checkAnswer: checkAnswer,
     generateDistractors: generateDistractors,
+    scrambleLetters: scrambleLetters,
   };
 }

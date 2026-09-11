@@ -12,6 +12,7 @@
     progress: null,
     unscrambleBuild: [],
     unscrambleBank: [],
+    awaitingAdvance: false,
   };
 
   var el = {};
@@ -115,6 +116,7 @@
   }
 
   function onModeButtonClick(evt) {
+    if (state.words.length === 0) return;
     var btn = evt.target.closest('.mode-btn');
     if (!btn) return;
     startRound(btn.getAttribute('data-mode'));
@@ -135,6 +137,7 @@
   }
 
   function showCurrentWord() {
+    state.awaitingAdvance = false;
     el.feedback.textContent = '';
     el.gameProgress.textContent = 'Word ' + (state.index + 1) + ' of ' + state.order.length;
     var word = state.order[state.index];
@@ -158,11 +161,13 @@
   }
 
   function onHearTypeSubmit() {
+    if (state.awaitingAdvance) return;
     var word = state.order[state.index];
     recordAnswer(checkAnswer(el.hearTypeInput.value, word));
   }
 
   function recordAnswer(correct) {
+    state.awaitingAdvance = true;
     state.results.push(correct);
     el.feedback.textContent = correct
       ? '✅ Correct!'

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Spelling Practice</title>
+<meta name="description" content="Practice this week's spelling words with three quick game modes." />
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9D%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap"><span class="brand">📝 Spelling Practice</span></div>
+</header>
+
+<main class="wrap">
+
+  <section id="home-screen" class="screen">
+    <p id="week-label" class="eyebrow"></p>
+    <h1>Practice This Week's Words</h1>
+    <p id="streak-display" class="streak"></p>
+    <p id="load-error" class="empty-state" hidden></p>
+    <div id="mode-list" class="mode-list">
+      <button type="button" class="mode-btn" data-mode="hear-type">
+        <span class="mode-title">🔊 Hear It, Type It</span>
+        <span class="mode-star" data-star-for="hear-type" hidden>⭐ Perfect!</span>
+      </button>
+      <button type="button" class="mode-btn" data-mode="multiple-choice">
+        <span class="mode-title">🔤 Multiple Choice</span>
+        <span class="mode-star" data-star-for="multiple-choice" hidden>⭐ Perfect!</span>
+      </button>
+      <button type="button" class="mode-btn" data-mode="unscramble">
+        <span class="mode-title">🧩 Unscramble</span>
+        <span class="mode-star" data-star-for="unscramble" hidden>⭐ Perfect!</span>
+      </button>
+    </div>
+  </section>
+
+  <section id="game-screen" class="screen" hidden>
+    <p id="game-progress" class="game-progress"></p>
+
+    <div id="hear-type-panel" class="mode-panel" hidden>
+      <button type="button" id="replay-audio-btn" class="plan-btn">🔊 Replay</button>
+      <p id="hear-type-hint" class="hint" hidden></p>
+      <input type="text" id="hear-type-input" class="text-input" autocomplete="off" autocapitalize="off" spellcheck="false" />
+      <button type="button" id="hear-type-submit" class="plan-btn">Check</button>
+    </div>
+
+    <div id="multiple-choice-panel" class="mode-panel" hidden>
+      <button type="button" id="mc-replay-btn" class="plan-btn">🔊 Replay</button>
+      <div id="mc-options" class="mc-options"></div>
+    </div>
+
+    <div id="unscramble-panel" class="mode-panel" hidden>
+      <div id="unscramble-build" class="tile-row"></div>
+      <div id="unscramble-bank" class="tile-row"></div>
+      <div class="unscramble-controls">
+        <button type="button" id="unscramble-reset" class="plan-btn">Reset</button>
+        <button type="button" id="unscramble-check" class="plan-btn">Check</button>
+      </div>
+    </div>
+
+    <p id="feedback" class="feedback" aria-live="polite"></p>
+  </section>
+
+  <section id="results-screen" class="screen" hidden>
+    <h2>Round Complete!</h2>
+    <p id="results-score" class="results-score"></p>
+    <p id="results-missed" class="results-missed"></p>
+    <div class="results-controls">
+      <button type="button" id="results-replay-btn" class="plan-btn">Play Again</button>
+      <button type="button" id="results-home-btn" class="plan-btn">Home</button>
+    </div>
+  </section>
+
+</main>
+
+<script src="assets/logic.js"></script>
+<script src="assets/storage.js"></script>
+<script src="assets/speech.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>

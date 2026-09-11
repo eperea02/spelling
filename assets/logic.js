@@ -98,11 +98,34 @@ function scrambleLetters(word, randomFn) {
   return scrambled;
 }
 
+function tallyScore(results) {
+  var correct = results.filter(function (r) { return r === true; }).length;
+  return { correct: correct, total: results.length };
+}
+
+function addDays(dateStr, delta) {
+  var d = new Date(dateStr + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + delta);
+  return d.toISOString().slice(0, 10);
+}
+
+function updateStreak(streak, todayDateStr) {
+  streak = streak || { count: 0, lastPlayedDate: null };
+  if (streak.lastPlayedDate === todayDateStr) {
+    return { count: streak.count, lastPlayedDate: todayDateStr };
+  }
+  var yesterday = addDays(todayDateStr, -1);
+  var newCount = (streak.lastPlayedDate === yesterday) ? streak.count + 1 : 1;
+  return { count: newCount, lastPlayedDate: todayDateStr };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     shuffleWords: shuffleWords,
     checkAnswer: checkAnswer,
     generateDistractors: generateDistractors,
     scrambleLetters: scrambleLetters,
+    tallyScore: tallyScore,
+    updateStreak: updateStreak,
   };
 }

@@ -1,7 +1,10 @@
 // tests/logic.test.js
 const test = require('node:test');
 const assert = require('node:assert');
-const { shuffleWords, checkAnswer, generateDistractors, scrambleLetters } = require('../assets/logic.js');
+const {
+  shuffleWords, checkAnswer, generateDistractors, scrambleLetters,
+  tallyScore, updateStreak,
+} = require('../assets/logic.js');
 
 test('shuffleWords returns a new array with the same elements', () => {
   const words = ['cat', 'dog', 'bird'];
@@ -83,4 +86,45 @@ test('scrambleLetters handles a 1-letter word without crashing', () => {
 test('scrambleLetters does not infinite-loop on all-identical letters', () => {
   const result = scrambleLetters('aaa', Math.random);
   assert.deepStrictEqual(result.slice().sort(), ['a', 'a', 'a']);
+});
+
+test('tallyScore counts correct answers out of total', () => {
+  assert.deepStrictEqual(tallyScore([true, false, true, true]), { correct: 3, total: 4 });
+});
+
+test('tallyScore handles an all-wrong round', () => {
+  assert.deepStrictEqual(tallyScore([false, false]), { correct: 0, total: 2 });
+});
+
+test('tallyScore handles an empty round', () => {
+  assert.deepStrictEqual(tallyScore([]), { correct: 0, total: 0 });
+});
+
+test('updateStreak starts at 1 with no prior streak', () => {
+  const result = updateStreak(null, '2026-09-11');
+  assert.deepStrictEqual(result, { count: 1, lastPlayedDate: '2026-09-11' });
+});
+
+test('updateStreak does not increment for a second play on the same day', () => {
+  const streak = { count: 3, lastPlayedDate: '2026-09-11' };
+  const result = updateStreak(streak, '2026-09-11');
+  assert.deepStrictEqual(result, { count: 3, lastPlayedDate: '2026-09-11' });
+});
+
+test('updateStreak increments for the very next day', () => {
+  const streak = { count: 3, lastPlayedDate: '2026-09-10' };
+  const result = updateStreak(streak, '2026-09-11');
+  assert.deepStrictEqual(result, { count: 4, lastPlayedDate: '2026-09-11' });
+});
+
+test('updateStreak resets to 1 after a skipped day', () => {
+  const streak = { count: 5, lastPlayedDate: '2026-09-08' };
+  const result = updateStreak(streak, '2026-09-11');
+  assert.deepStrictEqual(result, { count: 1, lastPlayedDate: '2026-09-11' });
+});
+
+test('updateStreak handles a month boundary correctly', () => {
+  const streak = { count: 2, lastPlayedDate: '2026-08-31' };
+  const result = updateStreak(streak, '2026-09-01');
+  assert.deepStrictEqual(result, { count: 3, lastPlayedDate: '2026-09-01' });
 });

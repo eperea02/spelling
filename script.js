@@ -82,6 +82,16 @@
     el.mcReplayBtn.addEventListener('click', function () {
       Speech.speak(state.order[state.index]);
     });
+    el.unscrambleReset.addEventListener('click', function () {
+      state.unscrambleBank = state.unscrambleBank.concat(state.unscrambleBuild);
+      state.unscrambleBuild = [];
+      renderUnscrambleTiles();
+    });
+    el.unscrambleCheck.addEventListener('click', function () {
+      if (state.awaitingAdvance) return;
+      var attempt = state.unscrambleBuild.join('');
+      recordAnswer(checkAnswer(attempt, state.order[state.index]));
+    });
     el.resultsReplayBtn.addEventListener('click', function () { startRound(state.mode); });
     el.resultsHomeBtn.addEventListener('click', function () {
       el.resultsScreen.hidden = true;
@@ -148,8 +158,9 @@
       setupHearType(word);
     } else if (state.mode === 'multiple-choice') {
       setupMultipleChoice(word);
+    } else if (state.mode === 'unscramble') {
+      setupUnscramble(word);
     }
-    // unscramble setup function is added in Task 10.
   }
 
   function setupHearType(word) {
@@ -181,6 +192,41 @@
       el.mcOptions.appendChild(btn);
     });
     if (Speech.isSupported()) Speech.speak(word);
+  }
+
+  function setupUnscramble(word) {
+    state.unscrambleBuild = [];
+    state.unscrambleBank = scrambleLetters(word);
+    renderUnscrambleTiles();
+  }
+
+  function renderUnscrambleTiles() {
+    el.unscrambleBuild.innerHTML = '';
+    el.unscrambleBank.innerHTML = '';
+
+    state.unscrambleBuild.forEach(function (letter, i) {
+      var tile = document.createElement('button');
+      tile.type = 'button';
+      tile.className = 'tile tile-build';
+      tile.textContent = letter;
+      tile.addEventListener('click', function () {
+        state.unscrambleBank.push(state.unscrambleBuild.splice(i, 1)[0]);
+        renderUnscrambleTiles();
+      });
+      el.unscrambleBuild.appendChild(tile);
+    });
+
+    state.unscrambleBank.forEach(function (letter, i) {
+      var tile = document.createElement('button');
+      tile.type = 'button';
+      tile.className = 'tile tile-bank';
+      tile.textContent = letter;
+      tile.addEventListener('click', function () {
+        state.unscrambleBuild.push(state.unscrambleBank.splice(i, 1)[0]);
+        renderUnscrambleTiles();
+      });
+      el.unscrambleBank.appendChild(tile);
+    });
   }
 
   function onHearTypeSubmit() {

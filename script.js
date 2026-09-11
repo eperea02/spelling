@@ -13,6 +13,7 @@
     unscrambleBuild: [],
     unscrambleBank: [],
     awaitingAdvance: false,
+    advanceTimer: null,
   };
 
   var el = {};
@@ -26,6 +27,7 @@
     el.loadError = document.getElementById('load-error');
     el.modeList = document.getElementById('mode-list');
     el.gameProgress = document.getElementById('game-progress');
+    el.gameHomeBtn = document.getElementById('game-home-btn');
     el.feedback = document.getElementById('feedback');
 
     el.hearTypePanel = document.getElementById('hear-type-panel');
@@ -97,6 +99,18 @@
       el.resultsScreen.hidden = true;
       renderHome();
     });
+    el.gameHomeBtn.addEventListener('click', goHome);
+  }
+
+  function goHome() {
+    if (state.advanceTimer) {
+      clearTimeout(state.advanceTimer);
+      state.advanceTimer = null;
+    }
+    Speech.cancel();
+    el.gameScreen.hidden = true;
+    el.resultsScreen.hidden = true;
+    renderHome();
   }
 
   function showLoadError() {
@@ -249,7 +263,7 @@
     el.feedback.textContent = correct
       ? '✅ Correct!'
       : '❌ Not quite — it was "' + state.order[state.index] + '"';
-    setTimeout(advance, 900);
+    state.advanceTimer = setTimeout(advance, 900);
   }
 
   function advance() {

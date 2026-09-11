@@ -14,7 +14,7 @@ var Speech = (function () {
     if (!isSupported()) return false;
     window.speechSynthesis.cancel();
     var utterance = new SpeechSynthesisUtterance(word);
-    utterance.rate = 0.85;
+    utterance.rate = 0.65;
     window.speechSynthesis.speak(utterance);
     return true;
   }

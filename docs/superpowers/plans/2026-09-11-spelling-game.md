@@ -330,6 +330,18 @@ function generateDistractors(word, count, randomFn) {
 }
 ```
 
+Then update the `module.exports` block (added in Task 2) to also expose `generateDistractors`:
+
+```js
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    shuffleWords: shuffleWords,
+    checkAnswer: checkAnswer,
+    generateDistractors: generateDistractors,
+  };
+}
+```
+
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `node --test tests/logic.test.js`
@@ -421,7 +433,7 @@ Expected: PASS (all tests, including the 4 new ones)
 
 - [ ] **Step 5: Update the exports and commit**
 
-Update the `module.exports` block in `assets/logic.js` to include the two new functions from Tasks 3-4:
+Update the `module.exports` block in `assets/logic.js` (already exporting `shuffleWords`, `checkAnswer`, `generateDistractors` as of Task 3) to also include `scrambleLetters`:
 
 ```js
 if (typeof module !== 'undefined' && module.exports) {

@@ -143,8 +143,9 @@ test('shuffleWords does not mutate the input array', () => {
 test('shuffleWords is deterministic given a fixed randomFn', () => {
   const words = ['a', 'b', 'c', 'd'];
   const result = shuffleWords(words, () => 0);
-  // Fisher-Yates with randomFn always 0 reverses the array
-  assert.deepStrictEqual(result, ['a', 'b', 'c', 'd'].reverse());
+  // Fisher-Yates with randomFn always 0 always swaps result[i] with result[0]
+  // for i = n-1 downTo 1, which is NOT a full reversal — verified: ['b','c','d','a']
+  assert.deepStrictEqual(result, ['b', 'c', 'd', 'a']);
 });
 
 test('checkAnswer matches case-insensitively', () => {

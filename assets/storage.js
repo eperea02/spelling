@@ -1,7 +1,7 @@
 // assets/storage.js
 // localStorage access, isolated from the rest of the app. Loaded as a plain
-// <script> tag in the browser (exposes a global `Storage` object) and
-// required directly from Node tests.
+// <script> tag in the browser and required directly from Node tests.
+// Browser: exposes a global ProgressStore object. Node: exports the same functions flat via module.exports.
 
 var STORAGE_KEY = 'spelling-progress-v1';
 var SCHEMA_VERSION = 1;
@@ -17,9 +17,9 @@ function defaultProgress() {
 function isValidProgress(parsed) {
   return !!parsed &&
     parsed.schemaVersion === SCHEMA_VERSION &&
-    typeof parsed.bestScores === 'object' &&
-    parsed.streak &&
-    typeof parsed.streak.count === 'number';
+    parsed.bestScores && typeof parsed.bestScores === 'object' && !Array.isArray(parsed.bestScores) &&
+    parsed.streak && typeof parsed.streak.count === 'number' &&
+    (parsed.streak.lastPlayedDate === null || typeof parsed.streak.lastPlayedDate === 'string');
 }
 
 function loadProgress(store) {
@@ -62,7 +62,7 @@ if (typeof module !== 'undefined' && module.exports) {
     recordBestScore: recordBestScore,
   };
 } else {
-  var Storage = {
+  var ProgressStore = {
     defaultProgress: defaultProgress,
     loadProgress: loadProgress,
     saveProgress: saveProgress,

@@ -1,6 +1,7 @@
 // assets/speech.js
 // Wraps the browser's Web Speech API so the rest of the app never touches
 // `window.speechSynthesis` directly. Browser-only — not loaded in Node tests.
+// Browser: exposes a global `Speech` object built by an IIFE. No Node export.
 
 var Speech = (function () {
   function isSupported() {

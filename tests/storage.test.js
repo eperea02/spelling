@@ -50,6 +50,24 @@ test('recordBestScore only raises the score, never lowers it', () => {
   assert.strictEqual(raised.bestScores['2026-09-14']['hear-type'], 9);
 });
 
+test('loadProgress returns defaults when bestScores is null', () => {
+  var store = fakeStore({});
+  store.setItem(STORAGE_KEY, JSON.stringify({ schemaVersion: 1, bestScores: null, streak: { count: 2, lastPlayedDate: '2026-09-10' } }));
+  assert.deepStrictEqual(loadProgress(store), defaultProgress());
+});
+
+test('loadProgress returns defaults when bestScores is an array', () => {
+  var store = fakeStore({});
+  store.setItem(STORAGE_KEY, JSON.stringify({ schemaVersion: 1, bestScores: [], streak: { count: 2, lastPlayedDate: '2026-09-10' } }));
+  assert.deepStrictEqual(loadProgress(store), defaultProgress());
+});
+
+test('loadProgress returns defaults when streak.lastPlayedDate is not a string or null', () => {
+  var store = fakeStore({});
+  store.setItem(STORAGE_KEY, JSON.stringify({ schemaVersion: 1, bestScores: {}, streak: { count: 2, lastPlayedDate: 12345 } }));
+  assert.deepStrictEqual(loadProgress(store), defaultProgress());
+});
+
 test('recordBestScore does not mutate the input progress object', () => {
   var progress = defaultProgress();
   recordBestScore(progress, '2026-09-14', 'hear-type', 6);

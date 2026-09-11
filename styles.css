@@ -12,6 +12,10 @@
 
 * { box-sizing: border-box; }
 
+/* Must beat any author-origin `display` set by a class (e.g. .mode-panel { display: flex }),
+   which otherwise wins over the user-agent's [hidden] { display: none } rule. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--bg);
@@ -29,7 +33,6 @@ body {
 .brand { font-weight: 700; font-size: 1.2rem; }
 
 .screen { padding: 24px 0 48px; }
-.screen[hidden] { display: none; }
 
 .eyebrow { color: #8a7f70; font-size: 0.85rem; margin: 0 0 4px; }
 h1 { font-size: 1.6rem; margin: 0 0 8px; }

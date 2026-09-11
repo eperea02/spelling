@@ -52,7 +52,7 @@
 
   function init() {
     cacheDom();
-    state.progress = Storage.loadProgress(window.localStorage);
+    state.progress = ProgressStore.loadProgress(window.localStorage);
 
     fetch('data/words.json')
       .then(function (res) {
@@ -143,6 +143,14 @@
     el.homeScreen.hidden = true;
     el.resultsScreen.hidden = true;
     el.gameScreen.hidden = false;
+
+    // Drop any stale interactive content left behind by a previous mode/round.
+    el.mcOptions.innerHTML = '';
+    state.unscrambleBuild = [];
+    state.unscrambleBank = [];
+    el.unscrambleBuild.innerHTML = '';
+    el.unscrambleBank.innerHTML = '';
+
     el.hearTypePanel.hidden = mode !== 'hear-type';
     el.mcPanel.hidden = mode !== 'multiple-choice';
     el.unscramblePanel.hidden = mode !== 'unscramble';
@@ -255,10 +263,10 @@
 
   function finishRound() {
     var score = tallyScore(state.results);
-    var today = new Date().toISOString().slice(0, 10);
-    state.progress = Storage.recordBestScore(state.progress, state.week, state.mode, score.correct);
+    var today = toLocalDateString(new Date());
+    state.progress = ProgressStore.recordBestScore(state.progress, state.week, state.mode, score.correct);
     state.progress.streak = updateStreak(state.progress.streak, today);
-    Storage.saveProgress(state.progress, window.localStorage);
+    ProgressStore.saveProgress(state.progress, window.localStorage);
 
     el.gameScreen.hidden = true;
     el.resultsScreen.hidden = false;

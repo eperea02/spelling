@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const {
   shuffleWords, checkAnswer, generateDistractors, scrambleLetters,
-  tallyScore, updateStreak,
+  tallyScore, updateStreak, toLocalDateString,
 } = require('../assets/logic.js');
 
 test('shuffleWords returns a new array with the same elements', () => {
@@ -127,4 +127,14 @@ test('updateStreak handles a month boundary correctly', () => {
   const streak = { count: 2, lastPlayedDate: '2026-08-31' };
   const result = updateStreak(streak, '2026-09-01');
   assert.deepStrictEqual(result, { count: 3, lastPlayedDate: '2026-09-01' });
+});
+
+test('toLocalDateString formats a local date without UTC conversion', () => {
+  const d = new Date(2026, 8, 11); // month is 0-indexed: September 11, 2026
+  assert.strictEqual(toLocalDateString(d), '2026-09-11');
+});
+
+test('toLocalDateString zero-pads single-digit month and day', () => {
+  const d = new Date(2026, 0, 5); // January 5, 2026
+  assert.strictEqual(toLocalDateString(d), '2026-01-05');
 });

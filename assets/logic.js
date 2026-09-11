@@ -1,6 +1,7 @@
 // assets/logic.js
 // Pure spelling-game logic — no DOM access. Loaded as a plain <script> tag in
 // the browser (exposes globals) and required directly from Node tests.
+// Browser: exposes bare global functions. Node: exports the same functions flat via module.exports.
 
 function shuffleWords(words, randomFn) {
   randomFn = randomFn || Math.random;
@@ -119,6 +120,12 @@ function updateStreak(streak, todayDateStr) {
   return { count: newCount, lastPlayedDate: todayDateStr };
 }
 
+function toLocalDateString(date) {
+  var month = date.getMonth() + 1;
+  var day = date.getDate();
+  return date.getFullYear() + '-' + (month < 10 ? '0' + month : month) + '-' + (day < 10 ? '0' + day : day);
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     shuffleWords: shuffleWords,
@@ -127,5 +134,6 @@ if (typeof module !== 'undefined' && module.exports) {
     scrambleLetters: scrambleLetters,
     tallyScore: tallyScore,
     updateStreak: updateStreak,
+    toLocalDateString: toLocalDateString,
   };
 }

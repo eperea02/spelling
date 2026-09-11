@@ -79,6 +79,9 @@
     el.replayAudioBtn.addEventListener('click', function () {
       Speech.speak(state.order[state.index]);
     });
+    el.mcReplayBtn.addEventListener('click', function () {
+      Speech.speak(state.order[state.index]);
+    });
     el.resultsReplayBtn.addEventListener('click', function () { startRound(state.mode); });
     el.resultsHomeBtn.addEventListener('click', function () {
       el.resultsScreen.hidden = true;
@@ -143,8 +146,10 @@
     var word = state.order[state.index];
     if (state.mode === 'hear-type') {
       setupHearType(word);
+    } else if (state.mode === 'multiple-choice') {
+      setupMultipleChoice(word);
     }
-    // multiple-choice and unscramble setup functions are added in Tasks 9-10.
+    // unscramble setup function is added in Task 10.
   }
 
   function setupHearType(word) {
@@ -158,6 +163,24 @@
         'Audio not supported on this browser — hint: ' + word.length + ' letters, starts with "' + word[0] + '"';
     }
     el.hearTypeInput.focus();
+  }
+
+  function setupMultipleChoice(word) {
+    el.mcOptions.innerHTML = '';
+    var distractors = generateDistractors(word, 3);
+    var options = shuffleWords(distractors.concat([word]));
+    options.forEach(function (opt) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mc-option';
+      btn.textContent = opt;
+      btn.addEventListener('click', function () {
+        if (state.awaitingAdvance) return;
+        recordAnswer(opt === word);
+      });
+      el.mcOptions.appendChild(btn);
+    });
+    if (Speech.isSupported()) Speech.speak(word);
   }
 
   function onHearTypeSubmit() {

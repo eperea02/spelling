@@ -381,7 +381,9 @@ test('scrambleLetters returns the same letters as the original word', () => {
 });
 
 test('scrambleLetters returns a different order than the original for a typical word', () => {
-  const result = scrambleLetters('beautiful', () => 0.9);
+  // NOT 0.9: for a 9-letter word, floor(0.9*(i+1)) === i at every step (verified),
+  // producing the identity permutation — the shuffle never actually swaps anything.
+  const result = scrambleLetters('beautiful', () => 0.1);
   assert.notDeepStrictEqual(result, 'beautiful'.split(''));
 });
 

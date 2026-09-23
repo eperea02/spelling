@@ -14,6 +14,11 @@
     unscrambleBank: [],
     awaitingAdvance: false,
     advanceTimer: null,
+    wsGrid: null,
+    wsCellEls: null,
+    wsFirstCell: null,
+    wsFound: {},
+    wsFlashTimer: null,
   };
 
   var el = {};
@@ -46,6 +51,10 @@
     el.unscrambleBank = document.getElementById('unscramble-bank');
     el.unscrambleReset = document.getElementById('unscramble-reset');
     el.unscrambleCheck = document.getElementById('unscramble-check');
+
+    el.wsPanel = document.getElementById('word-search-panel');
+    el.wsGrid = document.getElementById('ws-grid');
+    el.wsWordList = document.getElementById('ws-word-list');
 
     el.resultsScore = document.getElementById('results-score');
     el.resultsMissed = document.getElementById('results-missed');
@@ -111,6 +120,10 @@
       clearTimeout(state.advanceTimer);
       state.advanceTimer = null;
     }
+    if (state.wsFlashTimer) {
+      clearTimeout(state.wsFlashTimer);
+      state.wsFlashTimer = null;
+    }
     Speech.cancel();
     el.gameScreen.hidden = true;
     el.resultsScreen.hidden = true;
@@ -138,7 +151,7 @@
   }
 
   function renderStars() {
-    ['hear-type', 'multiple-choice', 'unscramble'].forEach(function (mode) {
+    ['hear-type', 'multiple-choice', 'unscramble', 'word-search'].forEach(function (mode) {
       var starEl = document.querySelector('[data-star-for="' + mode + '"]');
       var weekScores = state.progress.bestScores[state.week];
       var best = weekScores && weekScores[mode];
@@ -168,11 +181,23 @@
     state.unscrambleBank = [];
     el.unscrambleBuild.innerHTML = '';
     el.unscrambleBank.innerHTML = '';
+    if (state.wsFlashTimer) {
+      clearTimeout(state.wsFlashTimer);
+      state.wsFlashTimer = null;
+    }
+    el.wsGrid.innerHTML = '';
+    el.wsWordList.innerHTML = '';
 
     el.hearTypePanel.hidden = mode !== 'hear-type';
     el.mcPanel.hidden = mode !== 'multiple-choice';
     el.unscramblePanel.hidden = mode !== 'unscramble';
-    showCurrentWord();
+    el.wsPanel.hidden = mode !== 'word-search';
+
+    if (mode === 'word-search') {
+      setupWordSearch();
+    } else {
+      showCurrentWord();
+    }
   }
 
   function showCurrentWord() {
@@ -254,6 +279,94 @@
       });
       el.unscrambleBank.appendChild(tile);
     });
+  }
+
+  function setupWordSearch() {
+    state.wsFound = {};
+    state.wsFirstCell = null;
+    var built = buildWordSearchGrid(state.words);
+    state.wsGrid = built.grid;
+    renderWordSearchGrid();
+    renderWordSearchWordList();
+    renderWordSearchProgress();
+  }
+
+  function renderWordSearchGrid() {
+    var size = state.wsGrid.length;
+    el.wsGrid.innerHTML = '';
+    el.wsGrid.style.gridTemplateColumns = 'repeat(' + size + ', 1fr)';
+    state.wsCellEls = [];
+    state.wsGrid.forEach(function (rowLetters, row) {
+      var rowEls = [];
+      rowLetters.forEach(function (letter, col) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ws-cell';
+        btn.textContent = letter;
+        btn.addEventListener('click', function () { onWordSearchCellClick(row, col); });
+        el.wsGrid.appendChild(btn);
+        rowEls.push(btn);
+      });
+      state.wsCellEls.push(rowEls);
+    });
+  }
+
+  function renderWordSearchWordList() {
+    el.wsWordList.innerHTML = '';
+    state.words.forEach(function (word) {
+      var chip = document.createElement('span');
+      chip.className = 'ws-word' + (state.wsFound[word] ? ' found' : '');
+      chip.textContent = word;
+      el.wsWordList.appendChild(chip);
+    });
+  }
+
+  function renderWordSearchProgress() {
+    var foundCount = Object.keys(state.wsFound).length;
+    el.gameProgress.textContent = 'Found ' + foundCount + ' of ' + state.words.length;
+  }
+
+  function setWordSearchCellClass(cells, className, on) {
+    cells.forEach(function (rc) {
+      state.wsCellEls[rc[0]][rc[1]].classList.toggle(className, on);
+    });
+  }
+
+  function onWordSearchCellClick(row, col) {
+    if (!state.wsFirstCell) {
+      state.wsFirstCell = [row, col];
+      setWordSearchCellClass([[row, col]], 'selected', true);
+      return;
+    }
+
+    var first = state.wsFirstCell;
+    state.wsFirstCell = null;
+    setWordSearchCellClass([first], 'selected', false);
+
+    if (first[0] === row && first[1] === col) return; // tapped the same cell again — cancel
+
+    var cells = getWordSearchLineCells(first[0], first[1], row, col);
+    if (!cells) return; // not a straight line — ignore
+
+    var match = matchWordSearchSelection(state.wsGrid, cells, state.words);
+    if (match && !state.wsFound[match]) {
+      state.wsFound[match] = true;
+      setWordSearchCellClass(cells, 'found', true);
+      el.feedback.textContent = '✅ Found "' + match + '"!';
+      renderWordSearchWordList();
+      renderWordSearchProgress();
+      if (Object.keys(state.wsFound).length === state.words.length) {
+        state.order = state.words;
+        state.results = state.words.map(function () { return true; });
+        finishRound();
+      }
+    } else {
+      setWordSearchCellClass(cells, 'wrong', true);
+      if (state.wsFlashTimer) clearTimeout(state.wsFlashTimer);
+      state.wsFlashTimer = setTimeout(function () {
+        setWordSearchCellClass(cells, 'wrong', false);
+      }, 400);
+    }
   }
 
   function onHearTypeSubmit() {

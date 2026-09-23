@@ -127,6 +127,42 @@ h1 { font-size: 1.6rem; margin: 0 0 8px; }
 
 .unscramble-controls { display: flex; gap: 10px; }
 
+.ws-grid {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+}
+.ws-cell {
+  aspect-ratio: 1;
+  width: 100%;
+  padding: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--card);
+  color: var(--ink);
+}
+.ws-cell.selected { background: #fdecc8; border-color: var(--accent); }
+.ws-cell.found { background: #e3f2e1; border-color: var(--correct); color: var(--correct); }
+.ws-cell.wrong { background: #fdecea; border-color: var(--wrong); }
+
+.ws-word-list { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+.ws-word {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  background: var(--card);
+}
+.ws-word.found {
+  text-decoration: line-through;
+  color: #8a7f70;
+  border-color: #cfead0;
+  background: #f3faf2;
+}
+
 .feedback { font-weight: 700; min-height: 1.5em; }
 .feedback:empty { visibility: hidden; }
 

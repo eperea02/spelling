@@ -4,6 +4,8 @@ const assert = require('node:assert');
 const {
   shuffleWords, checkAnswer, generateDistractors, scrambleLetters,
   tallyScore, updateStreak, toLocalDateString,
+  computeWordSearchGridSize, canPlaceWordInGrid, placeWordInGrid,
+  buildWordSearchGrid, getWordSearchLineCells, matchWordSearchSelection,
 } = require('../assets/logic.js');
 
 test('shuffleWords returns a new array with the same elements', () => {
@@ -137,4 +139,129 @@ test('toLocalDateString formats a local date without UTC conversion', () => {
 test('toLocalDateString zero-pads single-digit month and day', () => {
   const d = new Date(2026, 0, 5); // January 5, 2026
   assert.strictEqual(toLocalDateString(d), '2026-01-05');
+});
+
+test('computeWordSearchGridSize is at least as large as the longest word', () => {
+  const size = computeWordSearchGridSize(['a', 'crash', 'be']);
+  assert.ok(size >= 5);
+});
+
+test('computeWordSearchGridSize has a floor of 8 for short word lists', () => {
+  const size = computeWordSearchGridSize(['a', 'be']);
+  assert.strictEqual(size, 8);
+});
+
+test('computeWordSearchGridSize grows with total letter count', () => {
+  const small = computeWordSearchGridSize(['cat', 'dog']);
+  const large = computeWordSearchGridSize(['important', 'beautiful', 'friend', 'because', 'people', 'through']);
+  assert.ok(large > small);
+});
+
+test('canPlaceWordInGrid rejects placement that runs off the grid', () => {
+  const grid = [[null, null], [null, null]];
+  assert.strictEqual(canPlaceWordInGrid(grid, 'CAT', 0, 0, 0, 1), false);
+});
+
+test('canPlaceWordInGrid allows placement on an empty grid that fits', () => {
+  const grid = [[null, null, null], [null, null, null], [null, null, null]];
+  assert.strictEqual(canPlaceWordInGrid(grid, 'CAT', 0, 0, 0, 1), true);
+});
+
+test('canPlaceWordInGrid allows crossing an existing matching letter', () => {
+  const grid = [[null, null, null], [null, null, null], [null, null, null]];
+  placeWordInGrid(grid, 'CAT', 0, 0, 1, 0); // vertical C-A-T down column 0
+  assert.strictEqual(canPlaceWordInGrid(grid, 'CAB', 0, 0, 0, 1), true); // shares the 'C'
+});
+
+test('canPlaceWordInGrid rejects a conflicting letter', () => {
+  const grid = [[null, null, null], [null, null, null], [null, null, null]];
+  placeWordInGrid(grid, 'CAT', 0, 0, 1, 0); // vertical C-A-T down column 0
+  assert.strictEqual(canPlaceWordInGrid(grid, 'DOG', 0, 0, 0, 1), false); // 'D' vs existing 'C'
+});
+
+test('placeWordInGrid writes each letter and returns the cells used', () => {
+  const grid = [[null, null, null], [null, null, null], [null, null, null]];
+  const cells = placeWordInGrid(grid, 'CAT', 0, 0, 0, 1);
+  assert.deepStrictEqual(grid[0], ['C', 'A', 'T']);
+  assert.deepStrictEqual(cells, [[0, 0], [0, 1], [0, 2]]);
+});
+
+test('buildWordSearchGrid places every word findable in the grid at its recorded cells', () => {
+  const words = ['cash', 'dash', 'crash', 'trash', 'what', 'why'];
+  const { grid, placements } = buildWordSearchGrid(words, 12, Math.random);
+  assert.strictEqual(placements.length, words.length);
+  placements.forEach((p) => {
+    const spelled = p.cells.map(([r, c]) => grid[r][c]).join('');
+    assert.strictEqual(spelled, p.word.toUpperCase());
+  });
+});
+
+test('buildWordSearchGrid fills every cell, leaving no gaps', () => {
+  const { grid, size } = buildWordSearchGrid(['cat', 'dog'], 8, Math.random);
+  assert.strictEqual(grid.length, size);
+  grid.forEach((row) => {
+    assert.strictEqual(row.length, size);
+    row.forEach((cell) => assert.ok(/^[A-Z]$/.test(cell)));
+  });
+});
+
+test('buildWordSearchGrid is deterministic given a fixed randomFn', () => {
+  const words = ['cat', 'dog', 'bird'];
+  const a = buildWordSearchGrid(words, 8, () => 0.42);
+  const b = buildWordSearchGrid(words, 8, () => 0.42);
+  assert.deepStrictEqual(a.grid, b.grid);
+  assert.deepStrictEqual(a.placements, b.placements);
+});
+
+test('buildWordSearchGrid defaults to a computed size when none is given', () => {
+  const { size } = buildWordSearchGrid(['cat', 'dog'], undefined, Math.random);
+  assert.strictEqual(size, computeWordSearchGridSize(['cat', 'dog']));
+});
+
+test('getWordSearchLineCells returns cells for a horizontal line', () => {
+  assert.deepStrictEqual(getWordSearchLineCells(2, 1, 2, 4), [[2, 1], [2, 2], [2, 3], [2, 4]]);
+});
+
+test('getWordSearchLineCells returns cells for a vertical line', () => {
+  assert.deepStrictEqual(getWordSearchLineCells(0, 3, 3, 3), [[0, 3], [1, 3], [2, 3], [3, 3]]);
+});
+
+test('getWordSearchLineCells returns cells for a diagonal line', () => {
+  assert.deepStrictEqual(getWordSearchLineCells(0, 0, 3, 3), [[0, 0], [1, 1], [2, 2], [3, 3]]);
+});
+
+test('getWordSearchLineCells returns cells for a reverse-direction line', () => {
+  assert.deepStrictEqual(getWordSearchLineCells(3, 3, 0, 0), [[3, 3], [2, 2], [1, 1], [0, 0]]);
+});
+
+test('getWordSearchLineCells rejects a non-straight, non-diagonal selection', () => {
+  assert.strictEqual(getWordSearchLineCells(0, 0, 2, 3), null);
+});
+
+test('getWordSearchLineCells rejects selecting the same cell twice', () => {
+  assert.strictEqual(getWordSearchLineCells(1, 1, 1, 1), null);
+});
+
+test('matchWordSearchSelection matches a forward selection', () => {
+  const grid = [['C', 'A', 'T']];
+  const cells = [[0, 0], [0, 1], [0, 2]];
+  assert.strictEqual(matchWordSearchSelection(grid, cells, ['cat', 'dog']), 'cat');
+});
+
+test('matchWordSearchSelection matches a backward selection', () => {
+  const grid = [['T', 'A', 'C']];
+  const cells = [[0, 0], [0, 1], [0, 2]];
+  assert.strictEqual(matchWordSearchSelection(grid, cells, ['cat', 'dog']), 'cat');
+});
+
+test('matchWordSearchSelection returns null for a non-matching selection', () => {
+  const grid = [['X', 'Y', 'Z']];
+  const cells = [[0, 0], [0, 1], [0, 2]];
+  assert.strictEqual(matchWordSearchSelection(grid, cells, ['cat', 'dog']), null);
+});
+
+test('matchWordSearchSelection returns null for fewer than 2 cells', () => {
+  const grid = [['C']];
+  assert.strictEqual(matchWordSearchSelection(grid, [[0, 0]], ['cat']), null);
+  assert.strictEqual(matchWordSearchSelection(grid, null, ['cat']), null);
 });

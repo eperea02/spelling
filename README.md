@@ -10,8 +10,9 @@ GitHub Pages.
 - `styles.css` — shared styling
 - `script.js` — DOM rendering and event wiring for all three game modes
 - `assets/logic.js` — pure game logic (shuffling, answer checking,
-  multiple-choice distractor generation, letter scrambling, scoring,
-  streak calculation), unit tested with Node's built-in test runner
+  multiple-choice distractor generation, letter scrambling, word search
+  grid generation and selection matching, scoring, streak calculation),
+  unit tested with Node's built-in test runner
 - `assets/storage.js` — localStorage progress persistence, schema
   versioned, unit tested with an injected fake store
 - `assets/speech.js` — Web Speech API wrapper (browser-only)
@@ -41,6 +42,9 @@ no other changes needed.
 2. **Multiple Choice** — pick the correct spelling among a few
    algorithmically generated near-miss options.
 3. **Unscramble** — tap scrambled letter tiles into the correct order.
+4. **Word Search** — tap the first letter of a word, then its last
+   letter, to find every word hidden in the grid (in any of 8
+   directions, forwards or backwards).
 
 Progress (best score per week/mode, and a daily play streak) is saved
 in the browser's localStorage — private to that phone/browser, no

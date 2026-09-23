@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Spelling Practice</title>
-<meta name="description" content="Practice this week's spelling words with three quick game modes." />
+<meta name="description" content="Practice this week's spelling words with four quick game modes." />
 <link rel="stylesheet" href="styles.css" />
 <link rel="manifest" href="manifest.webmanifest" />
 <meta name="theme-color" content="#d1552f" />
@@ -41,6 +41,10 @@
         <span class="mode-title">🧩 Unscramble</span>
         <span class="mode-star" data-star-for="unscramble" hidden>⭐ Perfect!</span>
       </button>
+      <button type="button" class="mode-btn" data-mode="word-search">
+        <span class="mode-title">🔍 Word Search</span>
+        <span class="mode-star" data-star-for="word-search" hidden>⭐ Perfect!</span>
+      </button>
     </div>
   </section>
 
@@ -68,6 +72,12 @@
         <button type="button" id="unscramble-reset" class="plan-btn">Reset</button>
         <button type="button" id="unscramble-check" class="plan-btn">Check</button>
       </div>
+    </div>
+
+    <div id="word-search-panel" class="mode-panel" hidden>
+      <p class="hint">Tap a letter, then tap the last letter of a word to select it.</p>
+      <div id="ws-grid" class="ws-grid"></div>
+      <div id="ws-word-list" class="ws-word-list"></div>
     </div>
 
     <p id="feedback" class="feedback" aria-live="polite"></p>

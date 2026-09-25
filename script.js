@@ -20,6 +20,7 @@
     wsFound: {},
     wsFlashTimer: null,
     flashCardFlipped: false,
+    speakCount: 0,
   };
 
   var el = {};
@@ -97,15 +98,9 @@
     el.hearTypeInput.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') onHearTypeSubmit();
     });
-    el.replayAudioBtn.addEventListener('click', function () {
-      Speech.speak(state.order[state.index]);
-    });
-    el.mcReplayBtn.addEventListener('click', function () {
-      Speech.speak(state.order[state.index]);
-    });
-    el.unscrambleReplayBtn.addEventListener('click', function () {
-      Speech.speak(state.order[state.index]);
-    });
+    el.replayAudioBtn.addEventListener('click', speakCurrentWord);
+    el.mcReplayBtn.addEventListener('click', speakCurrentWord);
+    el.unscrambleReplayBtn.addEventListener('click', speakCurrentWord);
     el.unscrambleReset.addEventListener('click', function () {
       state.unscrambleBank = state.unscrambleBank.concat(state.unscrambleBuild);
       state.unscrambleBuild = [];
@@ -219,6 +214,14 @@
     }
   }
 
+  function speakCurrentWord() {
+    if (!Speech.isSupported()) return;
+    var word = state.order[state.index];
+    var style = state.speakCount % 2 === 0 ? 'word' : 'spelled';
+    Speech.speak(word, style);
+    state.speakCount++;
+  }
+
   function showCurrentWord() {
     state.awaitingAdvance = false;
     el.feedback.textContent = '';
@@ -238,8 +241,9 @@
   function setupHearType(word) {
     el.hearTypeInput.value = '';
     el.hearTypeHint.hidden = true;
+    state.speakCount = 0;
     if (Speech.isSupported()) {
-      Speech.speak(word);
+      speakCurrentWord();
     } else {
       el.hearTypeHint.hidden = false;
       el.hearTypeHint.textContent =
@@ -263,14 +267,16 @@
       });
       el.mcOptions.appendChild(btn);
     });
-    if (Speech.isSupported()) Speech.speak(word);
+    state.speakCount = 0;
+    speakCurrentWord();
   }
 
   function setupUnscramble(word) {
     state.unscrambleBuild = [];
     state.unscrambleBank = scrambleLetters(word);
     renderUnscrambleTiles();
-    if (Speech.isSupported()) Speech.speak(word);
+    state.speakCount = 0;
+    speakCurrentWord();
   }
 
   function renderUnscrambleTiles() {
@@ -304,6 +310,7 @@
 
   function setupFlashCard(word) {
     state.flashCardFlipped = false;
+    state.speakCount = 0;
     el.flashCardFront.hidden = false;
     el.flashCardBack.hidden = true;
     el.flashCardBack.textContent = word.toUpperCase();
@@ -312,8 +319,7 @@
 
   function onFlashCardTap() {
     if (state.awaitingAdvance) return;
-    var word = state.order[state.index];
-    if (Speech.isSupported()) Speech.speak(word);
+    speakCurrentWord();
     if (state.flashCardFlipped) return;
     state.flashCardFlipped = true;
     el.flashCardFront.hidden = true;

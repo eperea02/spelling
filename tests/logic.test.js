@@ -6,6 +6,7 @@ const {
   tallyScore, updateStreak, toLocalDateString,
   computeWordSearchGridSize, canPlaceWordInGrid, placeWordInGrid,
   buildWordSearchGrid, getWordSearchLineCells, matchWordSearchSelection,
+  spellOutWord,
 } = require('../assets/logic.js');
 
 test('shuffleWords returns a new array with the same elements', () => {
@@ -36,6 +37,18 @@ test('checkAnswer matches case-insensitively', () => {
 
 test('checkAnswer trims surrounding whitespace', () => {
   assert.strictEqual(checkAnswer('  because  ', 'because'), true);
+});
+
+test('spellOutWord joins uppercased letters with periods', () => {
+  assert.strictEqual(spellOutWord('crash'), 'C. R. A. S. H.');
+});
+
+test('spellOutWord uppercases an already-mixed-case word', () => {
+  assert.strictEqual(spellOutWord('Crash'), 'C. R. A. S. H.');
+});
+
+test('spellOutWord handles a single letter', () => {
+  assert.strictEqual(spellOutWord('a'), 'A.');
 });
 
 test('checkAnswer rejects wrong spelling', () => {

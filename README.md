@@ -48,6 +48,11 @@ no other changes needed.
 5. **Flash Cards** — tap the card to hear the word and reveal its
    spelling, then self-grade with "I Knew It" / "Missed It".
 
+Every mode says the word aloud the first time and alternates between
+the whole word and a letter-by-letter spell-out ("C. R. A. S. H.") on
+each replay, resetting back to the whole word whenever a new word
+comes up.
+
 Progress (best score per week/mode, and a daily play streak) is saved
 in the browser's localStorage — private to that phone/browser, no
 account needed.

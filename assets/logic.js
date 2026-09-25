@@ -99,6 +99,10 @@ function scrambleLetters(word, randomFn) {
   return scrambled;
 }
 
+function spellOutWord(word) {
+  return word.toUpperCase().split('').join('. ') + '.';
+}
+
 function tallyScore(results) {
   var correct = results.filter(function (r) { return r === true; }).length;
   return { correct: correct, total: results.length };
@@ -264,6 +268,7 @@ if (typeof module !== 'undefined' && module.exports) {
     checkAnswer: checkAnswer,
     generateDistractors: generateDistractors,
     scrambleLetters: scrambleLetters,
+    spellOutWord: spellOutWord,
     tallyScore: tallyScore,
     updateStreak: updateStreak,
     toLocalDateString: toLocalDateString,

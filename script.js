@@ -19,6 +19,7 @@
     wsFirstCell: null,
     wsFound: {},
     wsFlashTimer: null,
+    flashCardFlipped: false,
   };
 
   var el = {};
@@ -55,6 +56,14 @@
     el.wsPanel = document.getElementById('word-search-panel');
     el.wsGrid = document.getElementById('ws-grid');
     el.wsWordList = document.getElementById('ws-word-list');
+
+    el.flashCardPanel = document.getElementById('flash-card-panel');
+    el.flashCard = document.getElementById('flash-card');
+    el.flashCardFront = document.getElementById('flash-card-front');
+    el.flashCardBack = document.getElementById('flash-card-back');
+    el.flashCardGrade = document.getElementById('flash-card-grade');
+    el.flashCardKnewIt = document.getElementById('flash-card-knew-it');
+    el.flashCardMissed = document.getElementById('flash-card-missed');
 
     el.resultsScore = document.getElementById('results-score');
     el.resultsMissed = document.getElementById('results-missed');
@@ -107,6 +116,15 @@
       var attempt = state.unscrambleBuild.join('');
       recordAnswer(checkAnswer(attempt, state.order[state.index]));
     });
+    el.flashCard.addEventListener('click', onFlashCardTap);
+    el.flashCardKnewIt.addEventListener('click', function () {
+      if (state.awaitingAdvance) return;
+      recordAnswer(true);
+    });
+    el.flashCardMissed.addEventListener('click', function () {
+      if (state.awaitingAdvance) return;
+      recordAnswer(false);
+    });
     el.resultsReplayBtn.addEventListener('click', function () { startRound(state.mode); });
     el.resultsHomeBtn.addEventListener('click', function () {
       el.resultsScreen.hidden = true;
@@ -151,7 +169,7 @@
   }
 
   function renderStars() {
-    ['hear-type', 'multiple-choice', 'unscramble', 'word-search'].forEach(function (mode) {
+    ['hear-type', 'multiple-choice', 'unscramble', 'word-search', 'flash-card'].forEach(function (mode) {
       var starEl = document.querySelector('[data-star-for="' + mode + '"]');
       var weekScores = state.progress.bestScores[state.week];
       var best = weekScores && weekScores[mode];
@@ -192,6 +210,7 @@
     el.mcPanel.hidden = mode !== 'multiple-choice';
     el.unscramblePanel.hidden = mode !== 'unscramble';
     el.wsPanel.hidden = mode !== 'word-search';
+    el.flashCardPanel.hidden = mode !== 'flash-card';
 
     if (mode === 'word-search') {
       setupWordSearch();
@@ -211,6 +230,8 @@
       setupMultipleChoice(word);
     } else if (state.mode === 'unscramble') {
       setupUnscramble(word);
+    } else if (state.mode === 'flash-card') {
+      setupFlashCard(word);
     }
   }
 
@@ -279,6 +300,25 @@
       });
       el.unscrambleBank.appendChild(tile);
     });
+  }
+
+  function setupFlashCard(word) {
+    state.flashCardFlipped = false;
+    el.flashCardFront.hidden = false;
+    el.flashCardBack.hidden = true;
+    el.flashCardBack.textContent = word.toUpperCase();
+    el.flashCardGrade.hidden = true;
+  }
+
+  function onFlashCardTap() {
+    if (state.awaitingAdvance) return;
+    var word = state.order[state.index];
+    if (Speech.isSupported()) Speech.speak(word);
+    if (state.flashCardFlipped) return;
+    state.flashCardFlipped = true;
+    el.flashCardFront.hidden = true;
+    el.flashCardBack.hidden = false;
+    el.flashCardGrade.hidden = false;
   }
 
   function setupWordSearch() {

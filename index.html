@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Spelling Practice</title>
-<meta name="description" content="Practice this week's spelling words with four quick game modes." />
+<meta name="description" content="Practice this week's spelling words with five quick game modes." />
 <link rel="stylesheet" href="styles.css" />
 <link rel="manifest" href="manifest.webmanifest" />
 <meta name="theme-color" content="#d1552f" />
@@ -45,6 +45,10 @@
         <span class="mode-title">🔍 Word Search</span>
         <span class="mode-star" data-star-for="word-search" hidden>⭐ Perfect!</span>
       </button>
+      <button type="button" class="mode-btn" data-mode="flash-card">
+        <span class="mode-title">🗂️ Flash Cards</span>
+        <span class="mode-star" data-star-for="flash-card" hidden>⭐ Perfect!</span>
+      </button>
     </div>
   </section>
 
@@ -78,6 +82,18 @@
       <p class="hint">Tap a letter, then tap the last letter of a word to select it.</p>
       <div id="ws-grid" class="ws-grid"></div>
       <div id="ws-word-list" class="ws-word-list"></div>
+    </div>
+
+    <div id="flash-card-panel" class="mode-panel" hidden>
+      <p class="hint">Tap the card to hear the word and reveal its spelling.</p>
+      <button type="button" id="flash-card" class="flash-card">
+        <span id="flash-card-front" class="flash-card-face">🔊 Tap to hear it</span>
+        <span id="flash-card-back" class="flash-card-face" hidden></span>
+      </button>
+      <div id="flash-card-grade" class="flash-card-grade" hidden>
+        <button type="button" id="flash-card-missed" class="plan-btn plan-btn-secondary">❌ Missed It</button>
+        <button type="button" id="flash-card-knew-it" class="plan-btn">✅ I Knew It</button>
+      </div>
     </div>
 
     <p id="feedback" class="feedback" aria-live="polite"></p>

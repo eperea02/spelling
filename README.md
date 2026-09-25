@@ -8,7 +8,7 @@ GitHub Pages.
 
 - `index.html` — the whole page: home screen, game screen, results screen
 - `styles.css` — shared styling
-- `script.js` — DOM rendering and event wiring for all three game modes
+- `script.js` — DOM rendering and event wiring for all five game modes
 - `assets/logic.js` — pure game logic (shuffling, answer checking,
   multiple-choice distractor generation, letter scrambling, word search
   grid generation and selection matching, scoring, streak calculation),
@@ -45,6 +45,8 @@ no other changes needed.
 4. **Word Search** — tap the first letter of a word, then its last
    letter, to find every word hidden in the grid (in any of 8
    directions, forwards or backwards).
+5. **Flash Cards** — tap the card to hear the word and reveal its
+   spelling, then self-grade with "I Knew It" / "Missed It".
 
 Progress (best score per week/mode, and a daily play streak) is saved
 in the browser's localStorage — private to that phone/browser, no

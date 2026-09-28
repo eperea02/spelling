@@ -11,5 +11,17 @@
     "math",
     "moth",
     "cloth"
-  ]
+  ],
+  "sentences": {
+    "this": "This is my favorite book.",
+    "that": "That dog is very friendly.",
+    "thin": "The ice on the pond was very thin.",
+    "think": "I think it will rain today.",
+    "thank": "I want to thank you for the gift.",
+    "bath": "I take a warm bath every night.",
+    "path": "We walked down the path in the park.",
+    "math": "Math is my favorite subject at school.",
+    "moth": "A moth flew around the porch light.",
+    "cloth": "She wiped the table with a soft cloth."
+  }
 }

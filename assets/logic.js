@@ -103,6 +103,53 @@ function spellOutWord(word) {
   return word.toUpperCase().split('').join('. ') + '.';
 }
 
+// Blanks out ~40% of the word's letters (at least one) with underscores,
+// for the Missing Letter mode's visual scaffold.
+function maskWord(word, randomFn) {
+  randomFn = randomFn || Math.random;
+  var upper = word.toUpperCase();
+  var blankCount = Math.max(1, Math.round(upper.length * 0.4));
+
+  var indices = [];
+  for (var i = 0; i < upper.length; i++) indices.push(i);
+  indices = shuffleWords(indices, randomFn);
+
+  var blanked = {};
+  indices.slice(0, blankCount).forEach(function (idx) { blanked[idx] = true; });
+
+  return upper.split('').map(function (ch, idx) { return blanked[idx] ? '_' : ch; }).join('');
+}
+
+// Builds a shuffled Memory Match deck: one "sound" card and one "text" card
+// per word, so the player pairs a spoken word with its written spelling.
+function buildMemoryDeck(words, randomFn) {
+  var cards = [];
+  words.forEach(function (word) {
+    cards.push({ word: word, type: 'sound' });
+    cards.push({ word: word, type: 'text' });
+  });
+  return shuffleWords(cards, randomFn);
+}
+
+// Builds a spelling-bee-style prompt: the word, then it used in a sentence,
+// then the word again. Falls back to just repeating the word when no
+// example sentence is available for it.
+function buildSentencePrompt(word, sentence) {
+  if (!sentence) return word + '. ' + word + '.';
+  return word + '. ' + sentence + ' ' + word + '.';
+}
+
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Replaces the word inside its example sentence with an underscore blank
+// (matching the word's length), case-insensitively, for on-screen display.
+function maskSentence(sentence, word) {
+  var pattern = new RegExp('\\b' + escapeRegExp(word) + '\\b', 'i');
+  return sentence.replace(pattern, '_'.repeat(word.length));
+}
+
 function tallyScore(results) {
   var correct = results.filter(function (r) { return r === true; }).length;
   return { correct: correct, total: results.length };
@@ -269,6 +316,10 @@ if (typeof module !== 'undefined' && module.exports) {
     generateDistractors: generateDistractors,
     scrambleLetters: scrambleLetters,
     spellOutWord: spellOutWord,
+    maskWord: maskWord,
+    buildMemoryDeck: buildMemoryDeck,
+    buildSentencePrompt: buildSentencePrompt,
+    maskSentence: maskSentence,
     tallyScore: tallyScore,
     updateStreak: updateStreak,
     toLocalDateString: toLocalDateString,

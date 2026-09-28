@@ -21,6 +21,12 @@
     wsFlashTimer: null,
     flashCardFlipped: false,
     speakCount: 0,
+    sentences: {},
+    memoryCards: [],
+    memoryFirstIndex: null,
+    memoryMatchedCount: 0,
+    memoryBusy: false,
+    memoryFlashTimer: null,
   };
 
   var el = {};
@@ -41,6 +47,7 @@
     el.hearTypeInput = document.getElementById('hear-type-input');
     el.hearTypeSubmit = document.getElementById('hear-type-submit');
     el.hearTypeHint = document.getElementById('hear-type-hint');
+    el.sentenceContext = document.getElementById('sentence-context');
     el.replayAudioBtn = document.getElementById('replay-audio-btn');
 
     el.mcPanel = document.getElementById('multiple-choice-panel');
@@ -66,6 +73,15 @@
     el.flashCardKnewIt = document.getElementById('flash-card-knew-it');
     el.flashCardMissed = document.getElementById('flash-card-missed');
 
+    el.missingLetterPanel = document.getElementById('missing-letter-panel');
+    el.missingLetterWord = document.getElementById('missing-letter-word');
+    el.missingLetterInput = document.getElementById('missing-letter-input');
+    el.missingLetterSubmit = document.getElementById('missing-letter-submit');
+    el.missingLetterReplayBtn = document.getElementById('missing-letter-replay-btn');
+
+    el.memoryMatchPanel = document.getElementById('memory-match-panel');
+    el.memoryGrid = document.getElementById('memory-grid');
+
     el.resultsScore = document.getElementById('results-score');
     el.resultsMissed = document.getElementById('results-missed');
     el.resultsReplayBtn = document.getElementById('results-replay-btn');
@@ -87,6 +103,7 @@
         }
         state.words = data.words;
         state.week = data.week || '';
+        state.sentences = data.sentences || {};
         renderHome();
       })
       .catch(function () {
@@ -120,6 +137,12 @@
       if (state.awaitingAdvance) return;
       recordAnswer(false);
     });
+    el.missingLetterSubmit.addEventListener('click', onMissingLetterSubmit);
+    el.missingLetterInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') onMissingLetterSubmit();
+    });
+    el.missingLetterReplayBtn.addEventListener('click', speakCurrentWord);
+    el.memoryGrid.addEventListener('click', onMemoryGridClick);
     el.resultsReplayBtn.addEventListener('click', function () { startRound(state.mode); });
     el.resultsHomeBtn.addEventListener('click', function () {
       el.resultsScreen.hidden = true;
@@ -136,6 +159,10 @@
     if (state.wsFlashTimer) {
       clearTimeout(state.wsFlashTimer);
       state.wsFlashTimer = null;
+    }
+    if (state.memoryFlashTimer) {
+      clearTimeout(state.memoryFlashTimer);
+      state.memoryFlashTimer = null;
     }
     Speech.cancel();
     el.gameScreen.hidden = true;
@@ -164,7 +191,8 @@
   }
 
   function renderStars() {
-    ['hear-type', 'multiple-choice', 'unscramble', 'word-search', 'flash-card'].forEach(function (mode) {
+    ['hear-type', 'multiple-choice', 'unscramble', 'word-search', 'flash-card',
+      'missing-letter', 'sentence-spell', 'memory-match'].forEach(function (mode) {
       var starEl = document.querySelector('[data-star-for="' + mode + '"]');
       var weekScores = state.progress.bestScores[state.week];
       var best = weekScores && weekScores[mode];
@@ -200,15 +228,24 @@
     }
     el.wsGrid.innerHTML = '';
     el.wsWordList.innerHTML = '';
+    if (state.memoryFlashTimer) {
+      clearTimeout(state.memoryFlashTimer);
+      state.memoryFlashTimer = null;
+    }
+    el.memoryGrid.innerHTML = '';
 
-    el.hearTypePanel.hidden = mode !== 'hear-type';
+    el.hearTypePanel.hidden = mode !== 'hear-type' && mode !== 'sentence-spell';
     el.mcPanel.hidden = mode !== 'multiple-choice';
     el.unscramblePanel.hidden = mode !== 'unscramble';
     el.wsPanel.hidden = mode !== 'word-search';
     el.flashCardPanel.hidden = mode !== 'flash-card';
+    el.missingLetterPanel.hidden = mode !== 'missing-letter';
+    el.memoryMatchPanel.hidden = mode !== 'memory-match';
 
     if (mode === 'word-search') {
       setupWordSearch();
+    } else if (mode === 'memory-match') {
+      setupMemoryMatch();
     } else {
       showCurrentWord();
     }
@@ -218,7 +255,11 @@
     if (!Speech.isSupported()) return;
     var word = state.order[state.index];
     var style = state.speakCount % 2 === 0 ? 'word' : 'spelled';
-    Speech.speak(word, style);
+    if (style === 'word' && state.mode === 'sentence-spell') {
+      Speech.speak(buildSentencePrompt(word, state.sentences[word]));
+    } else {
+      Speech.speak(word, style);
+    }
     state.speakCount++;
   }
 
@@ -227,7 +268,7 @@
     el.feedback.textContent = '';
     el.gameProgress.textContent = 'Word ' + (state.index + 1) + ' of ' + state.order.length;
     var word = state.order[state.index];
-    if (state.mode === 'hear-type') {
+    if (state.mode === 'hear-type' || state.mode === 'sentence-spell') {
       setupHearType(word);
     } else if (state.mode === 'multiple-choice') {
       setupMultipleChoice(word);
@@ -235,6 +276,8 @@
       setupUnscramble(word);
     } else if (state.mode === 'flash-card') {
       setupFlashCard(word);
+    } else if (state.mode === 'missing-letter') {
+      setupMissingLetter(word);
     }
   }
 
@@ -242,6 +285,15 @@
     el.hearTypeInput.value = '';
     el.hearTypeHint.hidden = true;
     state.speakCount = 0;
+
+    el.sentenceContext.hidden = state.mode !== 'sentence-spell';
+    if (state.mode === 'sentence-spell') {
+      var sentence = state.sentences[word];
+      el.sentenceContext.textContent = sentence
+        ? maskSentence(sentence, word)
+        : 'Listen carefully — no example sentence yet for this word.';
+    }
+
     if (Speech.isSupported()) {
       speakCurrentWord();
     } else {
@@ -250,6 +302,20 @@
         'Audio not supported on this browser — hint: ' + word.length + ' letters, starts with "' + word[0] + '"';
     }
     el.hearTypeInput.focus();
+  }
+
+  function setupMissingLetter(word) {
+    el.missingLetterInput.value = '';
+    el.missingLetterWord.textContent = maskWord(word);
+    state.speakCount = 0;
+    speakCurrentWord();
+    el.missingLetterInput.focus();
+  }
+
+  function onMissingLetterSubmit() {
+    if (state.awaitingAdvance) return;
+    var word = state.order[state.index];
+    recordAnswer(checkAnswer(el.missingLetterInput.value, word));
   }
 
   function setupMultipleChoice(word) {
@@ -325,6 +391,92 @@
     el.flashCardFront.hidden = true;
     el.flashCardBack.hidden = false;
     el.flashCardGrade.hidden = false;
+  }
+
+  function setupMemoryMatch() {
+    state.memoryCards = buildMemoryDeck(state.words).map(function (card) {
+      return { word: card.word, type: card.type, status: 'hidden' };
+    });
+    state.memoryFirstIndex = null;
+    state.memoryMatchedCount = 0;
+    state.memoryBusy = false;
+    renderMemoryGrid();
+    renderMemoryProgress();
+  }
+
+  function renderMemoryGrid() {
+    el.memoryGrid.innerHTML = '';
+    state.memoryCards.forEach(function (card, i) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'memory-card';
+      btn.dataset.index = i;
+      el.memoryGrid.appendChild(btn);
+    });
+    state.memoryCards.forEach(function (card, i) { renderMemoryCard(i); });
+  }
+
+  function renderMemoryCard(i) {
+    var card = state.memoryCards[i];
+    var btn = el.memoryGrid.children[i];
+    btn.classList.toggle('matched', card.status === 'matched');
+    btn.classList.toggle('revealed', card.status === 'revealed');
+    if (card.status === 'hidden') {
+      btn.textContent = '❓';
+    } else if (card.type === 'sound') {
+      btn.textContent = '🔊';
+    } else {
+      btn.textContent = card.word.toUpperCase();
+    }
+  }
+
+  function renderMemoryProgress() {
+    el.gameProgress.textContent = 'Matched ' + state.memoryMatchedCount + ' of ' + state.words.length + ' pairs';
+  }
+
+  function onMemoryGridClick(evt) {
+    if (state.memoryBusy) return;
+    var btn = evt.target.closest('.memory-card');
+    if (!btn) return;
+    var i = Number(btn.dataset.index);
+    var card = state.memoryCards[i];
+    if (card.status !== 'hidden') return;
+
+    card.status = 'revealed';
+    renderMemoryCard(i);
+    if (card.type === 'sound' && Speech.isSupported()) Speech.speak(card.word, 'word');
+
+    if (state.memoryFirstIndex === null) {
+      state.memoryFirstIndex = i;
+      return;
+    }
+
+    var firstIndex = state.memoryFirstIndex;
+    var first = state.memoryCards[firstIndex];
+    state.memoryFirstIndex = null;
+
+    if (first.word === card.word && first.type !== card.type) {
+      first.status = 'matched';
+      card.status = 'matched';
+      renderMemoryCard(firstIndex);
+      renderMemoryCard(i);
+      state.memoryMatchedCount++;
+      renderMemoryProgress();
+      if (state.memoryMatchedCount === state.words.length) {
+        state.order = state.words;
+        state.results = state.words.map(function () { return true; });
+        finishRound();
+      }
+    } else {
+      state.memoryBusy = true;
+      state.memoryFlashTimer = setTimeout(function () {
+        first.status = 'hidden';
+        card.status = 'hidden';
+        renderMemoryCard(firstIndex);
+        renderMemoryCard(i);
+        state.memoryBusy = false;
+      }, 800);
+    }
   }
 
   function setupWordSearch() {

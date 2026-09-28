@@ -6,7 +6,7 @@ const {
   tallyScore, updateStreak, toLocalDateString,
   computeWordSearchGridSize, canPlaceWordInGrid, placeWordInGrid,
   buildWordSearchGrid, getWordSearchLineCells, matchWordSearchSelection,
-  spellOutWord,
+  spellOutWord, maskWord, buildMemoryDeck, buildSentencePrompt, maskSentence,
 } = require('../assets/logic.js');
 
 test('shuffleWords returns a new array with the same elements', () => {
@@ -277,4 +277,83 @@ test('matchWordSearchSelection returns null for fewer than 2 cells', () => {
   const grid = [['C']];
   assert.strictEqual(matchWordSearchSelection(grid, [[0, 0]], ['cat']), null);
   assert.strictEqual(matchWordSearchSelection(grid, null, ['cat']), null);
+});
+
+test('maskWord returns the same length, uppercased, with only letters or underscores', () => {
+  const result = maskWord('crash', () => 0.3);
+  assert.strictEqual(result.length, 5);
+  assert.match(result, /^[A-Z_]+$/);
+});
+
+test('maskWord blanks about 40% of letters, rounded', () => {
+  const result = maskWord('crash', () => 0.3);
+  const blanks = result.split('').filter((ch) => ch === '_').length;
+  assert.strictEqual(blanks, 2); // round(5 * 0.4) = 2
+});
+
+test('maskWord always blanks at least one letter, even for very short words', () => {
+  const result = maskWord('at', () => 0.9);
+  const blanks = result.split('').filter((ch) => ch === '_').length;
+  assert.ok(blanks >= 1);
+});
+
+test('maskWord keeps revealed letters matching the uppercased original word', () => {
+  const word = 'crash';
+  const upper = word.toUpperCase();
+  const result = maskWord(word, () => 0.3);
+  for (let i = 0; i < upper.length; i++) {
+    if (result[i] !== '_') assert.strictEqual(result[i], upper[i]);
+  }
+});
+
+test('maskWord is deterministic given the same randomFn', () => {
+  assert.strictEqual(maskWord('crash', () => 0.3), maskWord('crash', () => 0.3));
+});
+
+test('buildMemoryDeck creates one sound card and one text card per word', () => {
+  const deck = buildMemoryDeck(['cat', 'dog'], () => 0);
+  assert.strictEqual(deck.length, 4);
+  const catCards = deck.filter((c) => c.word === 'cat');
+  assert.strictEqual(catCards.length, 2);
+  assert.deepStrictEqual(catCards.map((c) => c.type).sort(), ['sound', 'text']);
+});
+
+test('buildMemoryDeck does not mutate the input words array', () => {
+  const words = ['cat', 'dog'];
+  const copy = [...words];
+  buildMemoryDeck(words, () => 0.5);
+  assert.deepStrictEqual(words, copy);
+});
+
+test('buildMemoryDeck shuffles the cards rather than leaving them grouped by word', () => {
+  const words = ['cat', 'dog', 'bird'];
+  const deck = buildMemoryDeck(words, () => 0);
+  const sequentialOrder = [];
+  words.forEach((w) => { sequentialOrder.push(w + ':sound'); sequentialOrder.push(w + ':text'); });
+  const actualOrder = deck.map((c) => c.word + ':' + c.type);
+  assert.notDeepStrictEqual(actualOrder, sequentialOrder);
+});
+
+test('buildSentencePrompt says the word, then the sentence, then the word again', () => {
+  assert.strictEqual(
+    buildSentencePrompt('crash', 'The car had a crash.'),
+    'crash. The car had a crash. crash.'
+  );
+});
+
+test('buildSentencePrompt repeats the word when no sentence is available', () => {
+  assert.strictEqual(buildSentencePrompt('crash', undefined), 'crash. crash.');
+  assert.strictEqual(buildSentencePrompt('crash', ''), 'crash. crash.');
+});
+
+test('maskSentence blanks the word out with underscores matching its length', () => {
+  assert.strictEqual(maskSentence('The car had a crash.', 'crash'), 'The car had a _____.');
+});
+
+test('maskSentence matches the word case-insensitively', () => {
+  assert.strictEqual(maskSentence('This is fun.', 'this'), '____ is fun.');
+});
+
+test('maskSentence leaves the sentence unchanged if the word is not found in it', () => {
+  assert.strictEqual(maskSentence('Hello there.', 'crash'), 'Hello there.');
 });

@@ -11,5 +11,17 @@
     "be",
     "we",
     "or"
-  ]
+  ],
+  "sentences": {
+    "flipped": "She flipped the pancake with a spatula.",
+    "flipping": "He is flipping burgers on the grill.",
+    "stepped": "He stepped over the puddle.",
+    "stepping": "Watch your step while stepping down the stairs.",
+    "there": "The keys are over there.",
+    "from": "This letter is from my grandmother.",
+    "to": "We are walking to the park.",
+    "be": "I want to be a doctor someday.",
+    "we": "We are going to the beach.",
+    "or": "Would you like juice or milk?"
+  }
 }

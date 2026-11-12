@@ -201,6 +201,58 @@ h1 { font-size: 1.6rem; margin: 0 0 8px; }
 .xw-cell.solved .xw-input { background: #e3f2e1; border-color: var(--correct); color: var(--correct); }
 .xw-cell.wrong .xw-input { background: #fdecea; border-color: var(--wrong); }
 
+.flash-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 160px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  text-align: center;
+}
+.flash-card-face { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.04em; }
+
+.flash-card-grade { display: flex; gap: 10px; width: 100%; }
+.flash-card-grade .plan-btn { flex: 1; }
+.plan-btn-secondary { background: var(--card); color: var(--ink); border: 1px solid var(--border); }
+
+.sentence-context { font-style: italic; }
+
+.masked-word {
+  width: 100%;
+  padding: 24px;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+.memory-card {
+  aspect-ratio: 1;
+  width: 100%;
+  padding: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+}
+.memory-card.revealed { background: #fdecc8; border-color: var(--accent); }
+.memory-card.matched { background: #e3f2e1; border-color: var(--correct); color: var(--correct); }
+
 .feedback { font-weight: 700; min-height: 1.5em; }
 .feedback:empty { visibility: hidden; }
 

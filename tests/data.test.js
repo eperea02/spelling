@@ -32,3 +32,21 @@ test('words.json has no duplicate words', () => {
   const unique = new Set(data.words);
   assert.strictEqual(unique.size, data.words.length);
 });
+
+test('words.json sentences (if present) only key off real words', () => {
+  const data = JSON.parse(raw);
+  if (!data.sentences) return;
+  Object.keys(data.sentences).forEach((word) => {
+    assert.ok(data.words.includes(word), `"${word}" in sentences is not in words`);
+  });
+});
+
+test('words.json sentences (if present) each contain their word as a whole word', () => {
+  const data = JSON.parse(raw);
+  if (!data.sentences) return;
+  Object.entries(data.sentences).forEach(([word, sentence]) => {
+    assert.strictEqual(typeof sentence, 'string');
+    const re = new RegExp('\\b' + word + '\\b', 'i');
+    assert.ok(re.test(sentence), `sentence for "${word}" does not contain the word: "${sentence}"`);
+  });
+});

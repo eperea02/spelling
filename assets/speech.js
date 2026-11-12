@@ -10,10 +10,11 @@ var Speech = (function () {
       typeof SpeechSynthesisUtterance !== 'undefined';
   }
 
-  function speak(word) {
+  function speak(word, style) {
     if (!isSupported()) return false;
     window.speechSynthesis.cancel();
-    var utterance = new SpeechSynthesisUtterance(word);
+    var text = style === 'spelled' ? spellOutWord(word) : word;
+    var utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.65;
     window.speechSynthesis.speak(utterance);
     return true;

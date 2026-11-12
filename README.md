@@ -70,13 +70,15 @@ of using it in context. Commit and push — no other changes needed.
 9. **Memory Match** — flip two cards at a time to pair each word's
    spoken-word card with its written-spelling card.
 
-Every typing/speaking mode alternates on each replay between saying it
-plainly (the whole word, or the full sentence prompt in Spell It in a
-Sentence, or a crossword slot's word) and a letter-by-letter spell-out
-("C. R. A. S. H."), resetting back to the plain version whenever a new
-word (or slot) comes up. Memory Match always says the plain word on
-each card flip, since recognizing the word by ear is the point of that
-mode.
+Every mode speaks words "sounded out": broken into syllable-ish chunks
+("flip. ping.") at a slower rate (`splitIntoSyllables` in
+`assets/logic.js`, a dictionary-free heuristic — vowel groups are
+syllable nuclei, with the common silent-e and regular-"-ed" patterns
+folded in so simple words like "flipped" or "there" aren't
+over-split), so an early reader can decode it rather than just
+re-hearing it at normal speed. In Spell It in a Sentence, only the
+target word is sounded out this way — the example sentence itself is
+spoken at normal pace for natural context.
 
 Progress (best score per week/mode, and a daily play streak) is saved
 in the browser's localStorage — private to that phone/browser, no

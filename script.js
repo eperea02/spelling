@@ -26,7 +26,6 @@
     xwLastClickedCell: null,
     xwFlashTimer: null,
     flashCardFlipped: false,
-    speakCount: 0,
     sentences: {},
     memoryCards: [],
     memoryFirstIndex: null,
@@ -277,13 +276,19 @@
   function speakCurrentWord() {
     if (!Speech.isSupported()) return;
     var word = state.order[state.index];
-    var style = state.speakCount % 2 === 0 ? 'word' : 'spelled';
-    if (style === 'word' && state.mode === 'sentence-spell') {
-      Speech.speak(buildSentencePrompt(word, state.sentences[word]));
+    if (state.mode === 'sentence-spell') {
+      var sentence = state.sentences[word];
+      Speech.speakSequence(sentence ? [
+        { text: word, style: 'sounded-out' },
+        { text: sentence },
+        { text: word, style: 'sounded-out' },
+      ] : [
+        { text: word, style: 'sounded-out' },
+        { text: word, style: 'sounded-out' },
+      ]);
     } else {
-      Speech.speak(word, style);
+      Speech.speak(word, 'sounded-out');
     }
-    state.speakCount++;
   }
 
   function showCurrentWord() {
@@ -307,7 +312,6 @@
   function setupHearType(word) {
     el.hearTypeInput.value = '';
     el.hearTypeHint.hidden = true;
-    state.speakCount = 0;
 
     el.sentenceContext.hidden = state.mode !== 'sentence-spell';
     if (state.mode === 'sentence-spell') {
@@ -330,7 +334,6 @@
   function setupMissingLetter(word) {
     el.missingLetterInput.value = '';
     el.missingLetterWord.textContent = maskWord(word);
-    state.speakCount = 0;
     speakCurrentWord();
     el.missingLetterInput.focus();
   }
@@ -356,7 +359,6 @@
       });
       el.mcOptions.appendChild(btn);
     });
-    state.speakCount = 0;
     speakCurrentWord();
   }
 
@@ -364,7 +366,6 @@
     state.unscrambleBuild = [];
     state.unscrambleBank = scrambleLetters(word);
     renderUnscrambleTiles();
-    state.speakCount = 0;
     speakCurrentWord();
   }
 
@@ -399,7 +400,6 @@
 
   function setupFlashCard(word) {
     state.flashCardFlipped = false;
-    state.speakCount = 0;
     el.flashCardFront.hidden = false;
     el.flashCardBack.hidden = true;
     el.flashCardBack.textContent = word.toUpperCase();
@@ -467,7 +467,7 @@
 
     card.status = 'revealed';
     renderMemoryCard(i);
-    if (card.type === 'sound' && Speech.isSupported()) Speech.speak(card.word, 'word');
+    if (card.type === 'sound' && Speech.isSupported()) Speech.speak(card.word, 'sounded-out');
 
     if (state.memoryFirstIndex === null) {
       state.memoryFirstIndex = i;
@@ -681,16 +681,13 @@
     state.xwActiveSlotIdx = idx;
     var slot = state.xwLayout.slots[idx];
     setCrosswordSlotClass(slot, 'active', true);
-    state.speakCount = 0;
     speakCrosswordSlot();
   }
 
   function speakCrosswordSlot() {
     if (!Speech.isSupported() || state.xwActiveSlotIdx === null) return;
     var slot = state.xwLayout.slots[state.xwActiveSlotIdx];
-    var style = state.speakCount % 2 === 0 ? 'word' : 'spelled';
-    Speech.speak(slot.word.toLowerCase(), style);
-    state.speakCount++;
+    Speech.speak(slot.word.toLowerCase(), 'sounded-out');
   }
 
   function onCrosswordCellActivate(row, col) {

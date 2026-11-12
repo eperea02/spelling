@@ -8,6 +8,7 @@ const {
   buildWordSearchGrid, getWordSearchLineCells, matchWordSearchSelection,
   buildCrosswordLayout, crosswordSlotsAtCell,
   spellOutWord, maskWord, buildMemoryDeck, buildSentencePrompt, maskSentence,
+  splitIntoSyllables,
 } = require('../assets/logic.js');
 
 test('shuffleWords returns a new array with the same elements', () => {
@@ -464,4 +465,66 @@ test('maskSentence matches the word case-insensitively', () => {
 
 test('maskSentence leaves the sentence unchanged if the word is not found in it', () => {
   assert.strictEqual(maskSentence('Hello there.', 'crash'), 'Hello there.');
+});
+
+test('splitIntoSyllables leaves a single-vowel-group word whole', () => {
+  assert.deepStrictEqual(splitIntoSyllables('cash'), ['cash']);
+  assert.deepStrictEqual(splitIntoSyllables('thank'), ['thank']);
+  assert.deepStrictEqual(splitIntoSyllables('cloth'), ['cloth']);
+  assert.deepStrictEqual(splitIntoSyllables('to'), ['to']);
+  assert.deepStrictEqual(splitIntoSyllables('be'), ['be']);
+  assert.deepStrictEqual(splitIntoSyllables('or'), ['or']);
+});
+
+test('splitIntoSyllables splits a double-consonant -ing word into two chunks', () => {
+  assert.deepStrictEqual(splitIntoSyllables('flipping'), ['flip', 'ping']);
+  assert.deepStrictEqual(splitIntoSyllables('stepping'), ['step', 'ping']);
+  assert.deepStrictEqual(splitIntoSyllables('rabbit'), ['rab', 'bit']);
+});
+
+test('splitIntoSyllables keeps a regular -ed past tense as one chunk (silent e, no extra syllable)', () => {
+  assert.deepStrictEqual(splitIntoSyllables('flipped'), ['flipped']);
+  assert.deepStrictEqual(splitIntoSyllables('stepped'), ['stepped']);
+  assert.deepStrictEqual(splitIntoSyllables('jumped'), ['jumped']);
+});
+
+test('splitIntoSyllables splits -ed into its own chunk when the root ends in t or d', () => {
+  // The vowel/consonant split lands inside the "nt" blend rather than
+  // before it (a known limitation: this is a phonetic approximation, not
+  // morpheme-aware), but it still spells "wanted" back out exactly and
+  // reads fine aloud slowly as "wan... ted".
+  assert.deepStrictEqual(splitIntoSyllables('wanted'), ['wan', 'ted']);
+});
+
+test('splitIntoSyllables treats a word-final silent e (magic e / r-controlled) as one chunk', () => {
+  assert.deepStrictEqual(splitIntoSyllables('there'), ['there']);
+  assert.deepStrictEqual(splitIntoSyllables('where'), ['where']);
+  assert.deepStrictEqual(splitIntoSyllables('like'), ['like']);
+});
+
+test('splitIntoSyllables does not treat a double-e ending as a silent-e suffix', () => {
+  assert.deepStrictEqual(splitIntoSyllables('need'), ['need']);
+});
+
+test('splitIntoSyllables splits a single consonant between vowels onto the second syllable', () => {
+  assert.deepStrictEqual(splitIntoSyllables('baby'), ['ba', 'by']);
+});
+
+test('splitIntoSyllables preserves the original casing of the input', () => {
+  assert.deepStrictEqual(splitIntoSyllables('Flipping'), ['Flip', 'ping']);
+});
+
+test('splitIntoSyllables chunks always concatenate back to the exact original word', () => {
+  var words = [
+    'flipped', 'flipping', 'stepped', 'stepping', 'there', 'from', 'to', 'be', 'we', 'or',
+    'this', 'that', 'thin', 'think', 'thank', 'bath', 'path', 'math', 'moth', 'cloth',
+    'wanted', 'landed', 'like', 'need', 'baby', 'rabbit',
+  ];
+  words.forEach((word) => {
+    assert.strictEqual(splitIntoSyllables(word).join(''), word);
+  });
+});
+
+test('splitIntoSyllables handles a single-letter word without crashing', () => {
+  assert.deepStrictEqual(splitIntoSyllables('a'), ['a']);
 });

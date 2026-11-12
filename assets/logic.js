@@ -150,6 +150,70 @@ function maskSentence(sentence, word) {
   return sentence.replace(pattern, '_'.repeat(word.length));
 }
 
+var SYLLABLE_VOWELS = 'aeiouy';
+
+function isSyllableVowel(ch) {
+  return SYLLABLE_VOWELS.indexOf(ch.toLowerCase()) !== -1;
+}
+
+// Finds maximal runs of vowel letters (treating y as a vowel) and returns
+// their [start, end) index ranges in order.
+function findVowelGroups(lowerWord) {
+  var groups = [];
+  var i = 0;
+  while (i < lowerWord.length) {
+    if (isSyllableVowel(lowerWord[i])) {
+      var start = i;
+      while (i < lowerWord.length && isSyllableVowel(lowerWord[i])) i++;
+      groups.push([start, i]);
+    } else {
+      i++;
+    }
+  }
+  return groups;
+}
+
+// Heuristic, dictionary-free English syllable splitter for the "sound it
+// out" speech style: each vowel-letter run is a syllable nucleus, and a
+// consonant cluster between two nuclei splits after its first consonant
+// when there are 2+ consonants (closed syllable, e.g. "flip-ping"), or
+// moves entirely into the next syllable when there's only 1 (open
+// syllable, e.g. "ba-by"). Folds in the two silent-e patterns that would
+// otherwise over-count syllables for simple, regular words: a word-final
+// "e" after a consonant (magic e / r-controlled: "like", "there") and a
+// "-ed" suffix whose root doesn't end in t or d (pronounced /t/ or /d/,
+// no extra syllable: "flipped" — contrast "wanted", where the root ends
+// in t and "-ed" really is pronounced as its own syllable). Not
+// dictionary-accurate for irregular words, but solid for the short,
+// regular words these weekly lists use.
+function splitIntoSyllables(word) {
+  var lower = word.toLowerCase();
+  var groups = findVowelGroups(lower);
+  if (groups.length <= 1) return [word];
+
+  var beforeEd = lower.length >= 3 ? lower[lower.length - 3] : '';
+  var silentEd = lower.slice(-2) === 'ed' && !isSyllableVowel(beforeEd) &&
+    beforeEd !== 't' && beforeEd !== 'd';
+  var silentMagicE = !silentEd && lower[lower.length - 1] === 'e' &&
+    !isSyllableVowel(lower[lower.length - 2] || '');
+
+  if (silentEd || silentMagicE) groups = groups.slice(0, -1);
+  if (groups.length <= 1) return [word];
+
+  var syllables = [];
+  var cursor = 0;
+  for (var g = 0; g < groups.length - 1; g++) {
+    var thisEnd = groups[g][1];
+    var nextStart = groups[g + 1][0];
+    var consonants = nextStart - thisEnd;
+    var splitAt = consonants >= 2 ? thisEnd + 1 : thisEnd;
+    syllables.push(word.slice(cursor, splitAt));
+    cursor = splitAt;
+  }
+  syllables.push(word.slice(cursor));
+  return syllables;
+}
+
 function tallyScore(results) {
   var correct = results.filter(function (r) { return r === true; }).length;
   return { correct: correct, total: results.length };
@@ -446,6 +510,7 @@ if (typeof module !== 'undefined' && module.exports) {
     buildMemoryDeck: buildMemoryDeck,
     buildSentencePrompt: buildSentencePrompt,
     maskSentence: maskSentence,
+    splitIntoSyllables: splitIntoSyllables,
     tallyScore: tallyScore,
     updateStreak: updateStreak,
     toLocalDateString: toLocalDateString,

@@ -19,6 +19,12 @@
     wsFirstCell: null,
     wsFound: {},
     wsFlashTimer: null,
+    xwLayout: null,
+    xwFilled: {},
+    xwSolved: {},
+    xwActiveSlotIdx: null,
+    xwLastClickedCell: null,
+    xwFlashTimer: null,
   };
 
   var el = {};
@@ -55,6 +61,10 @@
     el.wsPanel = document.getElementById('word-search-panel');
     el.wsGrid = document.getElementById('ws-grid');
     el.wsWordList = document.getElementById('ws-word-list');
+
+    el.xwPanel = document.getElementById('crossword-panel');
+    el.xwGrid = document.getElementById('xw-grid');
+    el.xwReplayBtn = document.getElementById('xw-replay-btn');
 
     el.resultsScore = document.getElementById('results-score');
     el.resultsMissed = document.getElementById('results-missed');
@@ -107,6 +117,10 @@
       var attempt = state.unscrambleBuild.join('');
       recordAnswer(checkAnswer(attempt, state.order[state.index]));
     });
+    el.xwReplayBtn.addEventListener('click', function () {
+      if (state.xwActiveSlotIdx === null) return;
+      Speech.speak(state.xwLayout.slots[state.xwActiveSlotIdx].word.toLowerCase());
+    });
     el.resultsReplayBtn.addEventListener('click', function () { startRound(state.mode); });
     el.resultsHomeBtn.addEventListener('click', function () {
       el.resultsScreen.hidden = true;
@@ -123,6 +137,10 @@
     if (state.wsFlashTimer) {
       clearTimeout(state.wsFlashTimer);
       state.wsFlashTimer = null;
+    }
+    if (state.xwFlashTimer) {
+      clearTimeout(state.xwFlashTimer);
+      state.xwFlashTimer = null;
     }
     Speech.cancel();
     el.gameScreen.hidden = true;
@@ -151,7 +169,7 @@
   }
 
   function renderStars() {
-    ['hear-type', 'multiple-choice', 'unscramble', 'word-search'].forEach(function (mode) {
+    ['hear-type', 'multiple-choice', 'unscramble', 'word-search', 'crossword'].forEach(function (mode) {
       var starEl = document.querySelector('[data-star-for="' + mode + '"]');
       var weekScores = state.progress.bestScores[state.week];
       var best = weekScores && weekScores[mode];
@@ -187,14 +205,22 @@
     }
     el.wsGrid.innerHTML = '';
     el.wsWordList.innerHTML = '';
+    if (state.xwFlashTimer) {
+      clearTimeout(state.xwFlashTimer);
+      state.xwFlashTimer = null;
+    }
+    el.xwGrid.innerHTML = '';
 
     el.hearTypePanel.hidden = mode !== 'hear-type';
     el.mcPanel.hidden = mode !== 'multiple-choice';
     el.unscramblePanel.hidden = mode !== 'unscramble';
     el.wsPanel.hidden = mode !== 'word-search';
+    el.xwPanel.hidden = mode !== 'crossword';
 
     if (mode === 'word-search') {
       setupWordSearch();
+    } else if (mode === 'crossword') {
+      setupCrossword();
     } else {
       showCurrentWord();
     }
@@ -367,6 +393,175 @@
         setWordSearchCellClass(cells, 'wrong', false);
       }, 400);
     }
+  }
+
+  function setupCrossword() {
+    state.xwLayout = buildCrosswordLayout(state.words);
+    state.xwFilled = {};
+    state.xwSolved = {};
+    state.xwActiveSlotIdx = null;
+    state.xwLastClickedCell = null;
+    renderCrosswordGrid();
+    renderCrosswordProgress();
+    selectCrosswordSlot(0);
+    focusCrosswordCell(state.xwLayout.slots[0].cells[0]);
+  }
+
+  function renderCrosswordGrid() {
+    var layout = state.xwLayout;
+    el.xwGrid.innerHTML = '';
+    el.xwGrid.style.gridTemplateColumns = 'repeat(' + layout.cols + ', 1fr)';
+    state.xwCellEls = [];
+
+    for (var r = 0; r < layout.rows; r++) {
+      var rowEls = [];
+      for (var c = 0; c < layout.cols; c++) {
+        var wrapper = document.createElement('div');
+        if (layout.grid[r][c] === null) {
+          wrapper.className = 'xw-cell xw-block';
+          rowEls.push(null);
+        } else {
+          wrapper.className = 'xw-cell';
+          var startingSlot = layout.slots.find(function (s) { return s.row === r && s.col === c; });
+          if (startingSlot) {
+            var badge = document.createElement('span');
+            badge.className = 'xw-number';
+            badge.textContent = startingSlot.number;
+            wrapper.appendChild(badge);
+          }
+          var input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'xw-input';
+          input.maxLength = 1;
+          input.autocomplete = 'off';
+          input.autocapitalize = 'characters';
+          input.spellcheck = false;
+          input.setAttribute('data-row', r);
+          input.setAttribute('data-col', c);
+          (function (row, col, cellInput) {
+            cellInput.addEventListener('focus', function () {
+              cellInput.select();
+              onCrosswordCellActivate(row, col);
+            });
+            cellInput.addEventListener('input', function () {
+              onCrosswordInput(row, col, cellInput.value);
+            });
+            cellInput.addEventListener('keydown', function (e) {
+              if (e.key === 'Backspace' && !cellInput.value) {
+                moveCrosswordFocus(row, col, -1);
+              }
+            });
+          })(r, c, input);
+          wrapper.appendChild(input);
+          rowEls.push({ wrapper: wrapper, input: input });
+        }
+        el.xwGrid.appendChild(wrapper);
+      }
+      state.xwCellEls.push(rowEls);
+    }
+  }
+
+  function renderCrosswordProgress() {
+    var solvedCount = Object.keys(state.xwSolved).length;
+    el.gameProgress.textContent = 'Solved ' + solvedCount + ' of ' + state.xwLayout.slots.length;
+  }
+
+  function focusCrosswordCell(rc) {
+    var cellEl = state.xwCellEls[rc[0]][rc[1]];
+    if (cellEl) cellEl.input.focus();
+  }
+
+  function setCrosswordSlotClass(slot, className, on) {
+    slot.cells.forEach(function (rc) {
+      var cellEl = state.xwCellEls[rc[0]][rc[1]];
+      if (cellEl) cellEl.wrapper.classList.toggle(className, on);
+    });
+  }
+
+  function selectCrosswordSlot(idx) {
+    if (idx === state.xwActiveSlotIdx) return;
+    if (state.xwActiveSlotIdx !== null) {
+      setCrosswordSlotClass(state.xwLayout.slots[state.xwActiveSlotIdx], 'active', false);
+    }
+    state.xwActiveSlotIdx = idx;
+    var slot = state.xwLayout.slots[idx];
+    setCrosswordSlotClass(slot, 'active', true);
+    if (Speech.isSupported()) Speech.speak(slot.word.toLowerCase());
+  }
+
+  function onCrosswordCellActivate(row, col) {
+    var candidates = crosswordSlotsAtCell(state.xwLayout, row, col);
+    if (candidates.length === 0) return;
+
+    var sameCellAsBefore = state.xwLastClickedCell &&
+      state.xwLastClickedCell[0] === row && state.xwLastClickedCell[1] === col;
+    state.xwLastClickedCell = [row, col];
+
+    var nextIdx;
+    if (candidates.length === 1) {
+      nextIdx = candidates[0];
+    } else if (sameCellAsBefore && candidates.indexOf(state.xwActiveSlotIdx) !== -1) {
+      nextIdx = candidates[0] === state.xwActiveSlotIdx ? candidates[1] : candidates[0];
+    } else if (candidates.indexOf(state.xwActiveSlotIdx) !== -1) {
+      nextIdx = state.xwActiveSlotIdx;
+    } else {
+      nextIdx = candidates[0];
+    }
+    selectCrosswordSlot(nextIdx);
+  }
+
+  function moveCrosswordFocus(row, col, delta) {
+    var slot = state.xwLayout.slots[state.xwActiveSlotIdx];
+    var i = slot.cells.findIndex(function (rc) { return rc[0] === row && rc[1] === col; });
+    if (i === -1) return;
+    var target = slot.cells[i + delta];
+    if (target) focusCrosswordCell(target);
+  }
+
+  function onCrosswordInput(row, col, rawValue) {
+    var letter = rawValue.slice(-1).toUpperCase();
+    if (!/^[A-Z]$/.test(letter)) {
+      state.xwCellEls[row][col].input.value = '';
+      delete state.xwFilled[row + ',' + col];
+      return;
+    }
+    state.xwCellEls[row][col].input.value = letter;
+    state.xwFilled[row + ',' + col] = letter;
+
+    checkCrosswordSlotsAtCell(row, col);
+    moveCrosswordFocus(row, col, 1);
+  }
+
+  function checkCrosswordSlotsAtCell(row, col) {
+    var layout = state.xwLayout;
+    crosswordSlotsAtCell(layout, row, col).forEach(function (idx) {
+      if (state.xwSolved[idx]) return;
+      var slot = layout.slots[idx];
+      var guess = slot.cells.map(function (rc) { return state.xwFilled[rc[0] + ',' + rc[1]] || ''; }).join('');
+      if (guess.length < slot.word.length) return;
+
+      if (checkAnswer(guess, slot.word)) {
+        state.xwSolved[idx] = true;
+        setCrosswordSlotClass(slot, 'active', false);
+        setCrosswordSlotClass(slot, 'solved', true);
+        slot.cells.forEach(function (rc) {
+          state.xwCellEls[rc[0]][rc[1]].input.disabled = true;
+        });
+        el.feedback.textContent = '✅ Solved "' + slot.word.toLowerCase() + '"!';
+        renderCrosswordProgress();
+        if (Object.keys(state.xwSolved).length === layout.slots.length) {
+          state.order = state.words;
+          state.results = state.words.map(function () { return true; });
+          finishRound();
+        }
+      } else {
+        setCrosswordSlotClass(slot, 'wrong', true);
+        if (state.xwFlashTimer) clearTimeout(state.xwFlashTimer);
+        state.xwFlashTimer = setTimeout(function () {
+          setCrosswordSlotClass(slot, 'wrong', false);
+        }, 400);
+      }
+    });
   }
 
   function onHearTypeSubmit() {

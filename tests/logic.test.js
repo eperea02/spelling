@@ -6,6 +6,7 @@ const {
   tallyScore, updateStreak, toLocalDateString,
   computeWordSearchGridSize, canPlaceWordInGrid, placeWordInGrid,
   buildWordSearchGrid, getWordSearchLineCells, matchWordSearchSelection,
+  buildCrosswordLayout, crosswordSlotsAtCell,
 } = require('../assets/logic.js');
 
 test('shuffleWords returns a new array with the same elements', () => {
@@ -264,4 +265,111 @@ test('matchWordSearchSelection returns null for fewer than 2 cells', () => {
   const grid = [['C']];
   assert.strictEqual(matchWordSearchSelection(grid, [[0, 0]], ['cat']), null);
   assert.strictEqual(matchWordSearchSelection(grid, null, ['cat']), null);
+});
+
+test('buildCrosswordLayout places every word findable in the grid at its recorded cells', () => {
+  const words = ['flipped', 'flipping', 'stepped', 'stepping', 'there', 'from', 'to', 'be', 'we', 'or'];
+  const layout = buildCrosswordLayout(words);
+  assert.strictEqual(layout.slots.length, words.length);
+  layout.slots.forEach((slot) => {
+    const spelled = slot.cells.map(([r, c]) => layout.grid[r][c]).join('');
+    assert.strictEqual(spelled, slot.word.toUpperCase());
+  });
+});
+
+test('buildCrosswordLayout grid has no out-of-bounds cells and matches stated size', () => {
+  const words = ['flipped', 'flipping', 'stepped', 'stepping', 'there', 'from', 'to', 'be', 'we', 'or'];
+  const layout = buildCrosswordLayout(words);
+  assert.strictEqual(layout.grid.length, layout.rows);
+  layout.grid.forEach((row) => assert.strictEqual(row.length, layout.cols));
+  layout.slots.forEach((slot) => {
+    slot.cells.forEach(([r, c]) => {
+      assert.ok(r >= 0 && r < layout.rows);
+      assert.ok(c >= 0 && c < layout.cols);
+    });
+  });
+});
+
+test('buildCrosswordLayout intersecting words agree on the shared letter', () => {
+  const words = ['cat', 'car', 'dog'];
+  const layout = buildCrosswordLayout(words);
+  const cellLetters = {};
+  layout.slots.forEach((slot) => {
+    slot.cells.forEach(([r, c], i) => {
+      const key = r + ',' + c;
+      const letter = slot.word.toUpperCase()[i];
+      if (cellLetters[key]) {
+        assert.strictEqual(cellLetters[key], letter);
+      }
+      cellLetters[key] = letter;
+    });
+  });
+});
+
+test('buildCrosswordLayout assigns every slot a positive clue number', () => {
+  const words = ['cat', 'car', 'dog'];
+  const layout = buildCrosswordLayout(words);
+  layout.slots.forEach((slot) => {
+    assert.ok(Number.isInteger(slot.number) && slot.number > 0);
+  });
+});
+
+test('buildCrosswordLayout gives two slots starting at the same cell the same number', () => {
+  const words = ['cat', 'car'];
+  const layout = buildCrosswordLayout(words);
+  const starts = {};
+  layout.slots.forEach((slot) => {
+    const key = slot.row + ',' + slot.col;
+    if (starts[key] !== undefined) {
+      assert.strictEqual(slot.number, starts[key]);
+    }
+    starts[key] = slot.number;
+  });
+});
+
+test('buildCrosswordLayout never crashes on a word list with no shared letters at all', () => {
+  const words = ['xyz', 'qwerty'];
+  assert.doesNotThrow(() => buildCrosswordLayout(words));
+  const layout = buildCrosswordLayout(words);
+  assert.strictEqual(layout.slots.length, 2);
+});
+
+test('buildCrosswordLayout is deterministic for the same word list', () => {
+  const words = ['flipped', 'flipping', 'stepped', 'stepping', 'there', 'from', 'to', 'be', 'we', 'or'];
+  const a = buildCrosswordLayout(words);
+  const b = buildCrosswordLayout(words);
+  assert.deepStrictEqual(a, b);
+});
+
+test('crosswordSlotsAtCell returns the slot index for a cell used by only one word', () => {
+  const layout = buildCrosswordLayout(['cat', 'dog']);
+  const catSlot = layout.slots.findIndex((s) => s.word.toUpperCase() === 'CAT');
+  const [r, c] = layout.slots[catSlot].cells[0];
+  assert.deepStrictEqual(crosswordSlotsAtCell(layout, r, c), [catSlot]);
+});
+
+test('crosswordSlotsAtCell returns both slot indices at an intersection', () => {
+  const layout = buildCrosswordLayout(['cat', 'car']);
+  const catSlot = layout.slots.findIndex((s) => s.word.toUpperCase() === 'CAT');
+  const carSlot = layout.slots.findIndex((s) => s.word.toUpperCase() === 'CAR');
+  assert.notStrictEqual(catSlot, -1);
+  assert.notStrictEqual(carSlot, -1);
+  const shared = layout.slots[catSlot].cells.find((cell) =>
+    layout.slots[carSlot].cells.some((other) => other[0] === cell[0] && other[1] === cell[1])
+  );
+  assert.ok(shared, 'expected CAT and CAR to intersect on a shared C');
+  const result = crosswordSlotsAtCell(layout, shared[0], shared[1]);
+  assert.deepStrictEqual(result.slice().sort(), [catSlot, carSlot].sort());
+});
+
+test('crosswordSlotsAtCell returns an empty array for a blocked/unused cell', () => {
+  const layout = buildCrosswordLayout(['cat', 'dog']);
+  let blocked = null;
+  for (let r = 0; r < layout.rows && !blocked; r++) {
+    for (let c = 0; c < layout.cols; c++) {
+      if (layout.grid[r][c] === null) { blocked = [r, c]; break; }
+    }
+  }
+  assert.ok(blocked, 'expected at least one blocked cell in a 2-word layout');
+  assert.deepStrictEqual(crosswordSlotsAtCell(layout, blocked[0], blocked[1]), []);
 });

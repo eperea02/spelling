@@ -8,11 +8,12 @@ GitHub Pages.
 
 - `index.html` — the whole page: home screen, game screen, results screen
 - `styles.css` — shared styling
-- `script.js` — DOM rendering and event wiring for all three game modes
+- `script.js` — DOM rendering and event wiring for all five game modes
 - `assets/logic.js` — pure game logic (shuffling, answer checking,
   multiple-choice distractor generation, letter scrambling, word search
-  grid generation and selection matching, scoring, streak calculation),
-  unit tested with Node's built-in test runner
+  grid generation and selection matching, crossword layout generation
+  and slot lookup, scoring, streak calculation), unit tested with
+  Node's built-in test runner
 - `assets/storage.js` — localStorage progress persistence, schema
   versioned, unit tested with an injected fake store
 - `assets/speech.js` — Web Speech API wrapper (browser-only)
@@ -45,6 +46,11 @@ no other changes needed.
 4. **Word Search** — tap the first letter of a word, then its last
    letter, to find every word hidden in the grid (in any of 8
    directions, forwards or backwards).
+5. **Crossword** — a grid is generated from the week's word list
+   (words intersect on shared letters where possible). Tap a slot to
+   hear it spoken aloud, then type the letters; a slot locks in green
+   once it's filled correctly. Finishing every slot completes the
+   round.
 
 Progress (best score per week/mode, and a daily play streak) is saved
 in the browser's localStorage — private to that phone/browser, no

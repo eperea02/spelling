@@ -1,27 +1,27 @@
 {
-  "week": "2026-11-09",
+  "week": "2026-11-16",
   "words": [
-    "flipped",
-    "flipping",
-    "stepped",
-    "stepping",
-    "there",
-    "from",
-    "to",
+    "go",
+    "so",
+    "no",
     "be",
     "we",
-    "or"
+    "me",
+    "he",
+    "she",
+    "hi",
+    "flu"
   ],
   "sentences": {
-    "flipped": "She flipped the pancake with a spatula.",
-    "flipping": "He is flipping burgers on the grill.",
-    "stepped": "He stepped over the puddle.",
-    "stepping": "Watch your step while stepping down the stairs.",
-    "there": "The keys are over there.",
-    "from": "This letter is from my grandmother.",
-    "to": "We are walking to the park.",
+    "go": "It is time to go to school.",
+    "so": "I was so happy to see you.",
+    "no": "There is no milk left in the fridge.",
     "be": "I want to be a doctor someday.",
     "we": "We are going to the beach.",
-    "or": "Would you like juice or milk?"
+    "me": "Come and play with me.",
+    "he": "He is my best friend.",
+    "she": "She likes to ride her bike.",
+    "hi": "I waved and said hi to my neighbor.",
+    "flu": "She stayed home because she had the flu."
   }
 }
